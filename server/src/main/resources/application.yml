@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:easyinvoice
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  h2:
+    console:
+      enabled: true
+
+flyway:
+  enabled: true
+
+server:
+  port: 8080
