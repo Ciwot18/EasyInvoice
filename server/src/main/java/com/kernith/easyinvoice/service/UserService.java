@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+
+import com.kernith.easyinvoice.helper.Utils;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,12 +28,12 @@ public class UserService {
     }
 
     public User createBackofficeUser(CreateBackofficeUserRequest request, AuthPrincipal principal) {
+        Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER));   //Only company manager can create back_office users
         Optional<User> optionalUser = getRequiredCurrentUser(principal);
         if (optionalUser.isEmpty()) {
             return null;
         }
         User currentUser = optionalUser.get();
-        requireRoles(currentUser, List.of(UserRole.COMPANY_MANAGER));   //Only company manager can create back_office users
 
         String email = normalizeEmail(request.email());
         Long companyId = currentUser.getCompany().getId();
@@ -62,12 +64,12 @@ public class UserService {
     }
 
     public Optional<Boolean> disableUser(Long userId, AuthPrincipal principal) {
+        Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.PLATFORM_ADMIN));  //Also Platform_Admin can block a user if bad behaviour or suspected hack is detected
         Optional<User> optionalUser = getRequiredCurrentUser(principal);
         if (optionalUser.isEmpty()) {
             return Optional.empty();
         }
         User currentUser = optionalUser.get();
-        requireRoles(currentUser, List.of(UserRole.COMPANY_MANAGER, UserRole.PLATFORM_ADMIN));  //Also Platform_Admin can block a user if bad behaviour or suspected hack is detected
 
         Long companyId = currentUser.getCompany().getId();
         Optional<User> target = userRepository.findByIdAndCompanyId(userId, companyId);
@@ -93,12 +95,6 @@ public class UserService {
             return Optional.empty();
         }
         return userRepository.findById(principal.userId());
-    }
-
-    private void requireRoles(User user, List<UserRole> roles) {
-        if (!roles.contains(user.getRole())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient role");
-        }
     }
 
     private String normalizeEmail(String email) {
