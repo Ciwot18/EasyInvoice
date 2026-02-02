@@ -1,5 +1,6 @@
 package com.kernith.easyinvoice.service;
 
+import com.kernith.easyinvoice.config.AuthPrincipal;
 import com.kernith.easyinvoice.data.dto.company.CompanyDetailResponse;
 import com.kernith.easyinvoice.data.dto.company.CompanySummaryResponse;
 import com.kernith.easyinvoice.data.dto.company.CreateCompanyManagerRequest;
@@ -10,7 +11,6 @@ import com.kernith.easyinvoice.data.model.User;
 import com.kernith.easyinvoice.data.model.UserRole;
 import com.kernith.easyinvoice.data.repository.CompanyRepository;
 import com.kernith.easyinvoice.data.repository.UserRepository;
-import java.security.Principal;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -32,7 +32,7 @@ public class CompanyService {
         this.userRepository = userRepository;
     }
 
-    public CompanySummaryResponse createCompany(CreateCompanyRequest request, Principal principal) {
+    public CompanySummaryResponse createCompany(CreateCompanyRequest request, AuthPrincipal principal) {
         requirePlatformAdmin(principal);
 
         Company company = new Company();
@@ -40,26 +40,26 @@ public class CompanyService {
         company.setVatNumber(normalizeVat(request.vatNumber()));
 
         Company saved = companyRepository.save(company);
-        return toSummary(saved);
+        return CompanySummaryResponse.from(saved);
     }
 
-    public List<CompanySummaryResponse> listCompanies(Principal principal) {
+    public List<CompanySummaryResponse> listCompanies(AuthPrincipal principal) {
         requirePlatformAdmin(principal);
 
         return companyRepository.findAllByOrderByNameAsc()
                 .stream()
-                .map(this::toSummary)
+                .map(CompanySummaryResponse::from)
                 .toList();
     }
 
-    public Optional<CompanyDetailResponse> getCompany(Long companyId, Principal principal) {
+    public Optional<CompanyDetailResponse> getCompany(Long companyId, AuthPrincipal principal) {
         requirePlatformAdmin(principal);
 
         return companyRepository.findById(companyId)
-                .map(this::toDetail);
+                .map(CompanyDetailResponse::from);
     }
 
-    public Optional<UserSummary> createCompanyManager(Long companyId, CreateCompanyManagerRequest request, Principal principal) {
+    public Optional<UserSummary> createCompanyManager(Long companyId, CreateCompanyManagerRequest request, AuthPrincipal principal) {
         requirePlatformAdmin(principal);
 
         Optional<Company> company = companyRepository.findById(companyId);
@@ -83,19 +83,19 @@ public class CompanyService {
         return Optional.of(new UserSummary(saved.getId(), saved.getEmail(), saved.getRole(), saved.isEnabled()));
     }
 
-    private void requirePlatformAdmin(Principal principal) {
+    private void requirePlatformAdmin(AuthPrincipal principal) {
         User currentUser = getRequiredCurrentUser(principal);
         if (currentUser.getRole() != UserRole.PLATFORM_ADMIN) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient role");
         }
     }
 
-    private User getRequiredCurrentUser(Principal principal) {
-        if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
+    private User getRequiredCurrentUser(AuthPrincipal principal) {
+        if (principal == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing principal");
         }
 
-        return userRepository.findByEmailIgnoreCase(principal.getName())
+        return userRepository.findById(principal.userId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
     }
 
@@ -109,23 +109,5 @@ public class CompanyService {
         }
         String value = vatNumber.trim();
         return value.isEmpty() ? null : value;
-    }
-
-    private CompanySummaryResponse toSummary(Company company) {
-        return new CompanySummaryResponse(
-                company.getId(),
-                company.getName(),
-                company.getVatNumber(),
-                company.getCreatedAt()
-        );
-    }
-
-    private CompanyDetailResponse toDetail(Company company) {
-        return new CompanyDetailResponse(
-                company.getId(),
-                company.getName(),
-                company.getVatNumber(),
-                company.getCreatedAt()
-        );
     }
 }
