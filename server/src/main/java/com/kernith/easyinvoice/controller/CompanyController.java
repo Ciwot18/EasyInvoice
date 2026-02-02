@@ -49,7 +49,9 @@ public class CompanyController {
             @PathVariable("companyId") Long companyId,
             Principal principal
     ) {
-        return ResponseEntity.ok(companyService.getCompany(companyId, principal));
+        return companyService.getCompany(companyId, principal)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/api/platform/companies/{companyId}/managers")
@@ -58,7 +60,8 @@ public class CompanyController {
             @Valid @RequestBody CreateCompanyManagerRequest request,
             Principal principal
     ) {
-        UserSummary manager = companyService.createCompanyManager(companyId, request, principal);
-        return ResponseEntity.status(HttpStatus.CREATED).body(manager);
+        return companyService.createCompanyManager(companyId, request, principal)
+                .map(manager -> ResponseEntity.status(HttpStatus.CREATED).body(manager))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 }

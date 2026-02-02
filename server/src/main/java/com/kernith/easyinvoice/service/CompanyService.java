@@ -13,6 +13,7 @@ import com.kernith.easyinvoice.data.repository.UserRepository;
 import java.security.Principal;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -51,20 +52,20 @@ public class CompanyService {
                 .toList();
     }
 
-    public CompanyDetailResponse getCompany(Long companyId, Principal principal) {
+    public Optional<CompanyDetailResponse> getCompany(Long companyId, Principal principal) {
         requirePlatformAdmin(principal);
 
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found"));
-
-        return toDetail(company);
+        return companyRepository.findById(companyId)
+                .map(this::toDetail);
     }
 
-    public UserSummary createCompanyManager(Long companyId, CreateCompanyManagerRequest request, Principal principal) {
+    public Optional<UserSummary> createCompanyManager(Long companyId, CreateCompanyManagerRequest request, Principal principal) {
         requirePlatformAdmin(principal);
 
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Company not found"));
+        Optional<Company> company = companyRepository.findById(companyId);
+        if (company.isEmpty()) {
+            return Optional.empty();
+        }
 
         String email = normalizeEmail(request.email());
         userRepository.findByCompanyIdAndEmailIgnoreCase(companyId, email)
@@ -72,14 +73,14 @@ public class CompanyService {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already used for this company");
                 });
 
-        User user = new User(company);
+        User user = new User(company.get());
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setRole(UserRole.COMPANY_MANAGER);
         user.setEnabled(true);
 
         User saved = userRepository.save(user);
-        return new UserSummary(saved.getId(), saved.getEmail(), saved.getRole(), saved.isEnabled());
+        return Optional.of(new UserSummary(saved.getId(), saved.getEmail(), saved.getRole(), saved.isEnabled()));
     }
 
     private void requirePlatformAdmin(Principal principal) {
