@@ -1,12 +1,13 @@
 package com.kernith.easyinvoice.controller;
 
+import com.kernith.easyinvoice.config.AuthPrincipal;
 import com.kernith.easyinvoice.data.dto.user.CreateBackofficeUserRequest;
 import com.kernith.easyinvoice.data.dto.user.ProfileResponse;
 import com.kernith.easyinvoice.data.dto.user.UserSummary;
 import com.kernith.easyinvoice.data.model.User;
+import com.kernith.easyinvoice.helper.CurrentUser;
 import com.kernith.easyinvoice.service.UserService;
 import jakarta.validation.Valid;
-import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,7 +32,7 @@ public class UserController {
 	@PostMapping("/manager/backoffice-users")
 	public ResponseEntity<UserSummary> createBackofficeUser(
 			@Valid @RequestBody CreateBackofficeUserRequest request,
-			Principal principal
+            @CurrentUser AuthPrincipal principal
 	) {
 		User newUser = userService.createBackofficeUser(request, principal);
         if (newUser != null) {
@@ -42,7 +43,7 @@ public class UserController {
 	}
 
 	@GetMapping("/manager/users")
-	public ResponseEntity<List<UserSummary>> listCompanyUsers(Principal principal) {
+	public ResponseEntity<List<UserSummary>> listCompanyUsers(@CurrentUser AuthPrincipal principal) {
 		List<User> users = userService.listCompanyUsers(principal);
 		if (users.isEmpty()) {
 			return ResponseEntity.noContent().build();
@@ -51,7 +52,7 @@ public class UserController {
 	}
 
 	@PatchMapping("/manager/users/{userId}/disable")
-	public ResponseEntity<Void> disableUser(@PathVariable("userId") Long userId, Principal principal) {
+	public ResponseEntity<Void> disableUser(@PathVariable("userId") Long userId, @CurrentUser AuthPrincipal principal) {
 		if (userService.disableUser(userId, principal).isEmpty()) {
 			return ResponseEntity.notFound().build();
 		}
@@ -61,7 +62,7 @@ public class UserController {
 	// Back Office
 
 	@GetMapping("/backoffice/profile")
-	public ResponseEntity<ProfileResponse> getBackofficeProfile(Principal principal) {
+	public ResponseEntity<ProfileResponse> getBackofficeProfile(@CurrentUser AuthPrincipal principal) {
         Optional<User> optionalUser = userService.getBackofficeProfile(principal);
         if (optionalUser.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
