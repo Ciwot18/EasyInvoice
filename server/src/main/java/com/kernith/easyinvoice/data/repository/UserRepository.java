@@ -12,7 +12,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
 	Optional<User> findByCompanyIdAndEmailIgnoreCase(Long companyId, String email);
 
-	List<User> findByCompanyIdOrderByRoleAndEmailAsc(Long companyId);
+	List<User> findByCompanyIdOrderByRoleAscEmailAsc(Long companyId);
 
 	List<User> findByCompanyIdAndRoleOrderByEmailAsc(Long companyId, UserRole role);
 
