@@ -1,12 +1,10 @@
 package com.kernith.easyinvoice.service;
 
+import com.kernith.easyinvoice.config.AuthPrincipal;
 import com.kernith.easyinvoice.data.dto.user.CreateBackofficeUserRequest;
-import com.kernith.easyinvoice.data.dto.user.ProfileResponse;
-import com.kernith.easyinvoice.data.dto.user.UserSummary;
 import com.kernith.easyinvoice.data.model.User;
 import com.kernith.easyinvoice.data.model.UserRole;
 import com.kernith.easyinvoice.data.repository.UserRepository;
-import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -27,7 +25,7 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public User createBackofficeUser(CreateBackofficeUserRequest request, Principal principal) {
+    public User createBackofficeUser(CreateBackofficeUserRequest request, AuthPrincipal principal) {
         Optional<User> optionalUser = getRequiredCurrentUser(principal);
         if (optionalUser.isEmpty()) {
             return null;
@@ -52,7 +50,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public List<User> listCompanyUsers(Principal principal) {
+    public List<User> listCompanyUsers(AuthPrincipal principal) {
         Optional<User> optionalUser = getRequiredCurrentUser(principal);
         if (optionalUser.isEmpty()) {
             return Collections.emptyList();
@@ -63,7 +61,7 @@ public class UserService {
         return userRepository.findByCompanyIdOrderByRoleAscEmailAsc(companyId);
     }
 
-    public Optional<Boolean> disableUser(Long userId, Principal principal) {
+    public Optional<Boolean> disableUser(Long userId, AuthPrincipal principal) {
         Optional<User> optionalUser = getRequiredCurrentUser(principal);
         if (optionalUser.isEmpty()) {
             return Optional.empty();
@@ -82,15 +80,19 @@ public class UserService {
         return Optional.of(Boolean.TRUE);
     }
 
-    public Optional<User> getBackofficeProfile(Principal principal) {
+    public Optional<User> getBackofficeProfile(AuthPrincipal principal) {
         return getRequiredCurrentUser(principal);
     }
 
-    private Optional<User> getRequiredCurrentUser(Principal principal) {
-        if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
+    public Optional<User> getCurrentUser(AuthPrincipal principal) {
+        return getRequiredCurrentUser(principal);
+    }
+
+    private Optional<User> getRequiredCurrentUser(AuthPrincipal principal) {
+        if (principal == null) {
             return Optional.empty();
         }
-        return userRepository.findByEmailIgnoreCase(principal.getName());
+        return userRepository.findById(principal.userId());
     }
 
     private void requireRoles(User user, List<UserRole> roles) {
