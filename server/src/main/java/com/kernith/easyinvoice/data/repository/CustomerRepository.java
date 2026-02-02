@@ -15,7 +15,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     List<Customer> findByCompanyIdAndStatusOrderByDisplayNameAsc(Long companyId, CustomerStatus status);
 
-    Page<Customer> findByCompanyIdAndStatus(Long companyId, Pageable pageable, CustomerStatus status);
+    Page<Customer> findByCompanyIdAndStatus(Long companyId, CustomerStatus status, Pageable pageable);
 
     Optional<Customer> findByIdAndCompanyIdAndStatus(Long id, Long companyId, CustomerStatus Status);
 
@@ -34,5 +34,5 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
                 or c.country like concat('%', :q, '%')
               )
             """)
-    Page<Customer> searchByCompanyIdAndStatus(@Param("companyId") Long companyId, @Param("q") String q, Pageable pageable, CustomerStatus status);
+    Page<Customer> searchByCompanyIdAndStatus(@Param("companyId") Long companyId, CustomerStatus status, @Param("q") String q, Pageable pageable);
 }
