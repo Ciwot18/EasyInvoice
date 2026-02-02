@@ -3,10 +3,13 @@ package com.kernith.easyinvoice.controller;
 import com.kernith.easyinvoice.data.dto.user.CreateBackofficeUserRequest;
 import com.kernith.easyinvoice.data.dto.user.ProfileResponse;
 import com.kernith.easyinvoice.data.dto.user.UserSummary;
+import com.kernith.easyinvoice.data.model.User;
 import com.kernith.easyinvoice.service.UserService;
 import jakarta.validation.Valid;
 import java.security.Principal;
 import java.util.List;
+import java.util.Optional;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,22 +33,28 @@ public class UserController {
 			@Valid @RequestBody CreateBackofficeUserRequest request,
 			Principal principal
 	) {
-		UserSummary newUser = userService.createBackofficeUser(request, principal);
-		return ResponseEntity.status(HttpStatus.CREATED).body(newUser);
+		User newUser = userService.createBackofficeUser(request, principal);
+        if (newUser != null) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(UserSummary.from(newUser));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
 	}
 
 	@GetMapping("/manager/users")
 	public ResponseEntity<List<UserSummary>> listCompanyUsers(Principal principal) {
-		List<UserSummary> users = userService.listCompanyUsers(principal);
+		List<User> users = userService.listCompanyUsers(principal);
 		if (users.isEmpty()) {
 			return ResponseEntity.noContent().build();
 		}
-		return ResponseEntity.ok(users);
+		return ResponseEntity.ok(users.stream().map(UserSummary::from).toList());
 	}
 
 	@PatchMapping("/manager/users/{userId}/disable")
 	public ResponseEntity<Void> disableUser(@PathVariable("userId") Long userId, Principal principal) {
-		userService.disableUser(userId, principal);
+		if (userService.disableUser(userId, principal).isEmpty()) {
+			return ResponseEntity.notFound().build();
+		}
 		return ResponseEntity.noContent().build();
 	}
 
@@ -53,6 +62,11 @@ public class UserController {
 
 	@GetMapping("/backoffice/profile")
 	public ResponseEntity<ProfileResponse> getBackofficeProfile(Principal principal) {
-		return ResponseEntity.ok(userService.getBackofficeProfile(principal));
+        Optional<User> optionalUser = userService.getBackofficeProfile(principal);
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        } else {
+            return ResponseEntity.ok(ProfileResponse.from(optionalUser.get()));
+        }
 	}
 }

@@ -7,8 +7,10 @@ import com.kernith.easyinvoice.data.model.User;
 import com.kernith.easyinvoice.data.model.UserRole;
 import com.kernith.easyinvoice.data.repository.UserRepository;
 import java.security.Principal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,8 +27,12 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public UserSummary createBackofficeUser(CreateBackofficeUserRequest request, Principal principal) {
-        User currentUser = getRequiredCurrentUser(principal);
+    public User createBackofficeUser(CreateBackofficeUserRequest request, Principal principal) {
+        Optional<User> optionalUser = getRequiredCurrentUser(principal);
+        if (optionalUser.isEmpty()) {
+            return null;
+        }
+        User currentUser = optionalUser.get();
         requireRoles(currentUser, List.of(UserRole.COMPANY_MANAGER));   //Only company manager can create back_office users
 
         String email = normalizeEmail(request.email());
@@ -43,44 +49,48 @@ public class UserService {
         user.setRole(UserRole.BACK_OFFICE);
         user.setEnabled(true);
 
-        User saved = userRepository.save(user);
-        return toSummary(saved);
+        return userRepository.save(user);
     }
 
-    public List<UserSummary> listCompanyUsers(Principal principal) {
-        User currentUser = getRequiredCurrentUser(principal);
+    public List<User> listCompanyUsers(Principal principal) {
+        Optional<User> optionalUser = getRequiredCurrentUser(principal);
+        if (optionalUser.isEmpty()) {
+            return Collections.emptyList();
+        }
+        User currentUser = optionalUser.get();
         Long companyId = currentUser.getCompany().getId();
 
-        return userRepository.findByCompanyIdOrderByRoleAndEmailAsc(companyId)
-                .stream()
-                .map(this::toSummary)
-                .toList();
+        return userRepository.findByCompanyIdOrderByRoleAscEmailAsc(companyId);
     }
 
-    public void disableUser(Long userId, Principal principal) {
-        User currentUser = getRequiredCurrentUser(principal);
+    public Optional<Boolean> disableUser(Long userId, Principal principal) {
+        Optional<User> optionalUser = getRequiredCurrentUser(principal);
+        if (optionalUser.isEmpty()) {
+            return Optional.empty();
+        }
+        User currentUser = optionalUser.get();
         requireRoles(currentUser, List.of(UserRole.COMPANY_MANAGER, UserRole.PLATFORM_ADMIN));  //Also Platform_Admin can block a user if bad behaviour or suspected hack is detected
 
         Long companyId = currentUser.getCompany().getId();
-        User target = userRepository.findByIdAndCompanyId(userId, companyId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-
-        target.setEnabled(false);
-        userRepository.save(target);
-    }
-
-    public ProfileResponse getBackofficeProfile(Principal principal) {
-        User currentUser = getRequiredCurrentUser(principal);
-        return toProfile(currentUser);
-    }
-
-    private User getRequiredCurrentUser(Principal principal) {
-        if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing principal");
+        Optional<User> target = userRepository.findByIdAndCompanyId(userId, companyId);
+        if (target.isEmpty()) {
+            return Optional.empty();
         }
 
-        return userRepository.findByEmailIgnoreCase(principal.getName())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+        target.get().setEnabled(false);
+        userRepository.save(target.get());
+        return Optional.of(Boolean.TRUE);
+    }
+
+    public Optional<User> getBackofficeProfile(Principal principal) {
+        return getRequiredCurrentUser(principal);
+    }
+
+    private Optional<User> getRequiredCurrentUser(Principal principal) {
+        if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
+            return Optional.empty();
+        }
+        return userRepository.findByEmailIgnoreCase(principal.getName());
     }
 
     private void requireRoles(User user, List<UserRole> roles) {
@@ -91,24 +101,5 @@ public class UserService {
 
     private String normalizeEmail(String email) {
         return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
-    }
-
-    private UserSummary toSummary(User user) {
-        return new UserSummary(
-                user.getId(),
-                user.getEmail(),
-                user.getRole(),
-                user.isEnabled()
-        );
-    }
-
-    private ProfileResponse toProfile(User user) {
-        return new ProfileResponse(
-                user.getId(),
-                user.getEmail(),
-                user.getRole(),
-                user.isEnabled(),
-                user.getCreatedAt()
-        );
     }
 }
