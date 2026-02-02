@@ -19,3 +19,12 @@ server:
   port: 8080
   servlet:
     context-path: /api
+
+security:
+  jwt:
+    secret: "RANDOM_SECRET_TO_BE_CHANGED_AND_HANDLED_IN_ANOTHER_MOMENT"
+    exp-minutes: 1440
+
+logging:
+  level:
+    org.springframework.security: DEBUG
