@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS customers (
     created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_customers_company FOREIGN KEY (company_id) REFERENCES companies(id)
+    CONSTRAINT fk_customers_company FOREIGN KEY (company_id) REFERENCES companies(id),
     CONSTRAINT ck_customer_status CHECK (
         status IN ('ACTIVE', 'ARCHIVED', 'DELETED')
     )
