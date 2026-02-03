@@ -1,19 +1,22 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:easyinvoice
+    url: jdbc:h2:mem:easyinvoice;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:
+
   jpa:
     hibernate:
       ddl-auto: validate
     show-sql: true
+
   h2:
     console:
       enabled: true
+      path: /h2-console
 
-flyway:
-  enabled: true
+  flyway:
+    enabled: true
 
 server:
   port: 8080
@@ -28,3 +31,4 @@ security:
 logging:
   level:
     org.springframework.security: DEBUG
+    org.flywaydb: DEBUG
