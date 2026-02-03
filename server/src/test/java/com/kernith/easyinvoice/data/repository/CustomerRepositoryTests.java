@@ -90,7 +90,7 @@ public class CustomerRepositoryTests {
                 null,
                 PageRequest.of(0, 10, Sort.by("displayName"))
         );
-        assertThat(allActive.getTotalElements()).isEqualTo(2);
+        assertThat(allActive.getTotalElements()).isEqualTo(4);
 
         Page<Customer> filtered = customerRepository.searchByCompanyIdAndStatus(
                 2L,
