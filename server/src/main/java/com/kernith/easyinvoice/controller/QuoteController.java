@@ -9,6 +9,7 @@ import com.kernith.easyinvoice.data.dto.invoice.InvoiceDetailResponse;
 import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.helper.CurrentUser;
 import com.kernith.easyinvoice.service.InvoiceService;
+import com.kernith.easyinvoice.service.PdfService;
 import com.kernith.easyinvoice.service.QuoteService;
 import jakarta.validation.Valid;
 import java.util.Optional;
@@ -28,10 +29,12 @@ public class QuoteController {
 
     private final QuoteService quoteService;
     private final InvoiceService invoiceService;
+    private final PdfService pdfService;
 
-    public QuoteController(QuoteService quoteService, InvoiceService invoiceService) {
+    public QuoteController(QuoteService quoteService, InvoiceService invoiceService, PdfService pdfService) {
         this.quoteService = quoteService;
         this.invoiceService = invoiceService;
+        this.pdfService = pdfService;
     }
 
     @PostMapping("/quotes")
@@ -67,6 +70,19 @@ public class QuoteController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
         return ResponseEntity.ok(QuoteDetailResponse.from(optionalQuote.get()));
+    }
+
+    @GetMapping("/quotes/{quoteId}/pdf")
+    public ResponseEntity<byte[]> getQuotePdf(
+            @PathVariable("quoteId") Long quoteId,
+            @CurrentUser AuthPrincipal principal
+    ) {
+        byte[] pdf = pdfService.quotePdf(quoteId, principal);
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/pdf")
+                .header("Content-Disposition", "inline; filename=quote-" + quoteId + ".pdf")
+                .body(pdf);
     }
 
     @PatchMapping("/quotes/{quoteId}")

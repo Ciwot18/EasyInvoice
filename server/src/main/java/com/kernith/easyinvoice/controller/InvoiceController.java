@@ -8,6 +8,7 @@ import com.kernith.easyinvoice.data.dto.invoice.UpdateInvoiceRequest;
 import com.kernith.easyinvoice.data.model.Invoice;
 import com.kernith.easyinvoice.helper.CurrentUser;
 import com.kernith.easyinvoice.service.InvoiceService;
+import com.kernith.easyinvoice.service.PdfService;
 import jakarta.validation.Valid;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -25,9 +26,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class InvoiceController {
 
     private final InvoiceService invoiceService;
+    private final PdfService pdfService;
 
-    public InvoiceController(InvoiceService invoiceService) {
+    public InvoiceController(InvoiceService invoiceService, PdfService pdfService) {
         this.invoiceService = invoiceService;
+        this.pdfService = pdfService;
     }
 
     @PostMapping("/invoices")
@@ -63,6 +66,19 @@ public class InvoiceController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
         return ResponseEntity.ok(InvoiceDetailResponse.from(optionalInvoice.get()));
+    }
+
+    @GetMapping("/invoices/{invoiceId}/pdf")
+    public ResponseEntity<byte[]> getinvoicePdf(
+            @PathVariable("invoiceId") Long invoiceId,
+            @CurrentUser AuthPrincipal principal
+    ) {
+        byte[] pdf = pdfService.invoicePdf(invoiceId, principal);
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/pdf")
+                .header("Content-Disposition", "inline; filename=invoice-" + invoiceId + ".pdf")
+                .body(pdf);
     }
 
     @PatchMapping("/invoices/{invoiceId}")
