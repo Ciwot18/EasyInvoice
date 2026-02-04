@@ -10,6 +10,8 @@ import com.kernith.easyinvoice.data.repository.CompanyRepository;
 import com.kernith.easyinvoice.data.repository.CustomerRepository;
 import java.util.List;
 import java.util.Optional;
+
+import com.kernith.easyinvoice.data.repository.QuoteRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.data.domain.Page;
@@ -31,7 +33,8 @@ class CustomerServiceTests {
     void createCustomerReturnsSavedCustomerWhenValid() {
         CustomerRepository customerRepository = mock(CustomerRepository.class);
         CompanyRepository companyRepository = mock(CompanyRepository.class);
-        CustomerService customerService = new CustomerService(customerRepository, companyRepository);
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        CustomerService customerService = new CustomerService(customerRepository, companyRepository, quoteRepository);
 
         Company company = new Company();
         when(companyRepository.findById(10L)).thenReturn(Optional.of(company));
@@ -66,7 +69,8 @@ class CustomerServiceTests {
     void updateCustomerThrowsWhenCustomerMissing() {
         CustomerRepository customerRepository = mock(CustomerRepository.class);
         CompanyRepository companyRepository = mock(CompanyRepository.class);
-        CustomerService customerService = new CustomerService(customerRepository, companyRepository);
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        CustomerService customerService = new CustomerService(customerRepository, companyRepository, quoteRepository);
 
         when(customerRepository.findByIdAndCompanyIdAndStatus(10L, 10L, CustomerStatus.ACTIVE))
                 .thenReturn(Optional.empty());
@@ -93,7 +97,8 @@ class CustomerServiceTests {
     void createCustomerThrowsWhenVatAlreadyUsed() {
         CustomerRepository customerRepository = mock(CustomerRepository.class);
         CompanyRepository companyRepository = mock(CompanyRepository.class);
-        CustomerService customerService = new CustomerService(customerRepository, companyRepository);
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        CustomerService customerService = new CustomerService(customerRepository, companyRepository, quoteRepository);
 
         when(customerRepository.findByCompanyIdAndVatNumberAndStatus(eq(10L), eq("IT123"), eq(CustomerStatus.ACTIVE)))
                 .thenReturn(Optional.of(new Customer(new Company())));
@@ -121,7 +126,8 @@ class CustomerServiceTests {
     void listCustomersUsesSearchWhenQueryProvided() {
         CustomerRepository customerRepository = mock(CustomerRepository.class);
         CompanyRepository companyRepository = mock(CompanyRepository.class);
-        CustomerService customerService = new CustomerService(customerRepository, companyRepository);
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        CustomerService customerService = new CustomerService(customerRepository, companyRepository, quoteRepository);
 
         AuthPrincipal principal = new AuthPrincipal(7L, 10L, "BACK_OFFICE", List.of());
         Page<Customer> page = new PageImpl<>(List.of(new Customer(new Company())));
@@ -137,7 +143,8 @@ class CustomerServiceTests {
     void listCustomersUsesFindWhenQueryBlank() {
         CustomerRepository customerRepository = mock(CustomerRepository.class);
         CompanyRepository companyRepository = mock(CompanyRepository.class);
-        CustomerService customerService = new CustomerService(customerRepository, companyRepository);
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        CustomerService customerService = new CustomerService(customerRepository, companyRepository, quoteRepository);
 
         AuthPrincipal principal = new AuthPrincipal(7L, 10L, "BACK_OFFICE", List.of());
         Page<Customer> page = new PageImpl<>(List.of());
@@ -154,7 +161,8 @@ class CustomerServiceTests {
     void updateCustomerAllowsSameVatNumber() {
         CustomerRepository customerRepository = mock(CustomerRepository.class);
         CompanyRepository companyRepository = mock(CompanyRepository.class);
-        CustomerService customerService = new CustomerService(customerRepository, companyRepository);
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        CustomerService customerService = new CustomerService(customerRepository, companyRepository, quoteRepository);
 
         Customer customer = new Customer(new Company());
         customer.setVatNumber("IT123");
@@ -185,7 +193,8 @@ class CustomerServiceTests {
     void deleteCustomerReturnsEmptyWhenMissing() {
         CustomerRepository customerRepository = mock(CustomerRepository.class);
         CompanyRepository companyRepository = mock(CompanyRepository.class);
-        CustomerService customerService = new CustomerService(customerRepository, companyRepository);
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        CustomerService customerService = new CustomerService(customerRepository, companyRepository, quoteRepository);
 
         when(customerRepository.findByIdAndCompanyIdAndStatus(10L, 10L, CustomerStatus.ACTIVE))
                 .thenReturn(Optional.empty());
