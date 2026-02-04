@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS invoices (
 
     CONSTRAINT fk_invoices_company FOREIGN KEY (company_id) REFERENCES companies(id),
     CONSTRAINT fk_invoices_customer FOREIGN KEY (customer_id) REFERENCES customers(id),
-    CONSTRAINT fk_invoices_source_quote FOREIGN KEY (source_quote_id) REFERENCES quotes(id)
+    CONSTRAINT fk_invoices_source_quote FOREIGN KEY (source_quote_id) REFERENCES quotes(id),
     CONSTRAINT uq_invoices_company_year_number UNIQUE (company_id, invoice_year, invoice_number),
     CONSTRAINT ck_invoices_status CHECK (status IN ('DRAFT', 'ISSUED', 'PAID', 'OVERDUE'))
 );
