@@ -78,7 +78,7 @@ public class QuoteController {
             @PathVariable("quoteId") Long quoteId,
             @CurrentUser AuthPrincipal principal
     ) {
-        if (quoteService.archiveQuote(quoteId, principal).isEmpty()) {
+        if (!quoteService.archiveQuote(quoteId, principal)) {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.noContent().build();
@@ -89,7 +89,7 @@ public class QuoteController {
             @PathVariable("quoteId") Long quoteId,
             @CurrentUser AuthPrincipal principal
     ) {
-        if (quoteService.sendQuote(quoteId, principal).isEmpty()) {
+        if (!quoteService.sendQuote(quoteId, principal)) {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.noContent().build();
@@ -100,7 +100,7 @@ public class QuoteController {
             @PathVariable("quoteId") Long quoteId,
             @CurrentUser AuthPrincipal principal
     ) {
-        if (quoteService.acceptQuote(quoteId, principal).isEmpty()) {
+        if (!quoteService.acceptQuote(quoteId, principal)) {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.noContent().build();
@@ -111,7 +111,7 @@ public class QuoteController {
             @PathVariable("quoteId") Long quoteId,
             @CurrentUser AuthPrincipal principal
     ) {
-        if (quoteService.rejectQuote(quoteId, principal).isEmpty()) {
+        if (!quoteService.rejectQuote(quoteId, principal)) {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.noContent().build();
@@ -123,7 +123,7 @@ public class QuoteController {
             @PathVariable("quoteId") Long quoteId,
             @CurrentUser AuthPrincipal principal
     ) {
-        if (quoteService.convertQuote(quoteId, principal).isEmpty()) {
+        if (!quoteService.convertQuote(quoteId, principal)) {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.noContent().build();
