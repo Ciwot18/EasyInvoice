@@ -340,7 +340,7 @@ class InvoiceServiceTests {
         when(invoiceRepository.findByIdAndCompanyId(10L, 10L)).thenReturn(Optional.of(invoice));
 
         AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
-        assertThrows(ResponseStatusException.class, () -> invoiceService.payInvoice(10L, principal));
+        assertThrows(IllegalStateException.class, () -> invoiceService.payInvoice(10L, principal));
     }
 
     @Test

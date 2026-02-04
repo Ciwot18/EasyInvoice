@@ -70,6 +70,12 @@ class InvoiceControllerTests {
     static class TestExceptionHandler {
         @ExceptionHandler(RuntimeException.class)
         ResponseEntity<String> handleRuntime(RuntimeException ex) {
+            if (ex instanceof IllegalStateException stateEx) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(stateEx.getMessage());
+            }
+            if (ex instanceof ResponseStatusException statusEx) {
+                return ResponseEntity.status(statusEx.getStatusCode()).body("Request error");
+            }
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal error");
         }
     }

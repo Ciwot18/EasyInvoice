@@ -233,7 +233,7 @@ class QuoteServiceTests {
         when(quoteRepository.findByIdAndCompanyId(10L, 10L)).thenReturn(Optional.of(quote));
 
         AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
-        assertThrows(ResponseStatusException.class, () -> quoteService.sendQuote(10L, principal));
+        assertThrows(IllegalStateException.class, () -> quoteService.sendQuote(10L, principal));
     }
 
     @Test
