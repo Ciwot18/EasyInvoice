@@ -1,5 +1,7 @@
 package com.kernith.easyinvoice.data.model;
 
+import com.kernith.easyinvoice.data.model.state.invoice.InvoiceState;
+import com.kernith.easyinvoice.data.model.state.invoice.InvoiceStateFactory;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,6 +14,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PostLoad;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
@@ -99,6 +102,8 @@ public class Invoice {
     @Column(name = "updated_at", nullable = false, updatable = false, insertable = false)
     private LocalDateTime updatedAt;
 
+    private InvoiceState state;
+
     public Invoice() {}
 
     public Invoice(Company company, Customer customer) {
@@ -127,6 +132,11 @@ public class Invoice {
             }
             recalculateTotalsFromItems(items);
         }
+    }
+
+    @PostLoad
+    void initState() {
+        this.state = InvoiceStateFactory.from(status);
     }
 
     public Long getId() {
@@ -259,5 +269,41 @@ public class Invoice {
 
     private BigDecimal defaultAmount(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
+    }
+
+    public void draft() {
+        ensureState();
+        state.draft(this);
+        this.state = InvoiceStateFactory.from(status);
+    }
+
+    public void issue() {
+        ensureState();
+        state.issue(this);
+        this.state = InvoiceStateFactory.from(status);
+    }
+
+    public void pay() {
+        ensureState();
+        state.pay(this);
+        this.state = InvoiceStateFactory.from(status);
+    }
+
+    public void overdue() {
+        ensureState();
+        state.overdue(this);
+        this.state = InvoiceStateFactory.from(status);
+    }
+
+    public void archive() {
+        ensureState();
+        state.archive(this);
+        this.state = InvoiceStateFactory.from(status);
+    }
+
+    private void ensureState() {
+        if (state == null) {
+            state = InvoiceStateFactory.from(status);
+        }
     }
 }
