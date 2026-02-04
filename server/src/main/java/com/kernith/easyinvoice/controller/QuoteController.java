@@ -13,6 +13,7 @@ import com.kernith.easyinvoice.service.QuoteService;
 import jakarta.validation.Valid;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -63,7 +64,7 @@ public class QuoteController {
     ) {
         Optional<Quote> optionalQuote = quoteService.getQuote(quoteId, principal);
         if (optionalQuote.isEmpty()) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
         return ResponseEntity.ok(QuoteDetailResponse.from(optionalQuote.get()));
     }
@@ -83,7 +84,7 @@ public class QuoteController {
             @CurrentUser AuthPrincipal principal
     ) {
         if (!quoteService.archiveQuote(quoteId, principal)) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
         return ResponseEntity.noContent().build();
     }
@@ -94,7 +95,7 @@ public class QuoteController {
             @CurrentUser AuthPrincipal principal
     ) {
         if (!quoteService.sendQuote(quoteId, principal)) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
         return ResponseEntity.noContent().build();
     }
@@ -105,7 +106,7 @@ public class QuoteController {
             @CurrentUser AuthPrincipal principal
     ) {
         if (!quoteService.acceptQuote(quoteId, principal)) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
         return ResponseEntity.noContent().build();
     }
@@ -116,7 +117,7 @@ public class QuoteController {
             @CurrentUser AuthPrincipal principal
     ) {
         if (!quoteService.rejectQuote(quoteId, principal)) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
         return ResponseEntity.noContent().build();
     }
