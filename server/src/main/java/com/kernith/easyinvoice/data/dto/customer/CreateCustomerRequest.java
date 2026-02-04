@@ -12,7 +12,7 @@ public record CreateCustomerRequest(
         @Email @Size(max = 254) String email,
         @Size(max = 40) String phone,
         @Email @Size(max = 254) String pec,
-        @Size(max = 200) String addressLine1,
+        @Size(max = 200) String address,
         @Size(max = 120) String city,
         @Size(max = 20) String postalCode,
         @Size(max = 2) String country,

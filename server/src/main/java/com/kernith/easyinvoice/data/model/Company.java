@@ -22,6 +22,9 @@ public class Company {
     @Column(name = "vat_number", length = 32)
     private String vatNumber;
 
+    @Column(name = "address", length = 200)
+    private String address;
+
     @Column(name = "created_at", nullable = false, updatable = false, insertable = false)
     private LocalDateTime createdAt;
 
@@ -50,4 +53,8 @@ public class Company {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
+
+    public String getAddress() { return address; }
+
+    public void setAddress(String address) { this.address = address; }
 }

@@ -1,6 +1,6 @@
 -- Companies (id=1 reserved for __PLATFORM__ from V2 migration)
-INSERT INTO companies (id, name, vat_number) VALUES (2, 'Alpha SRL', 'IT000000001');
-INSERT INTO companies (id, name, vat_number) VALUES (3, 'Beta SPA', 'IT000000002');
+INSERT INTO companies (id, name, vat_number, address) VALUES (2, 'Alpha SRL', 'IT000000001', 'Via Roma 12, Milano');
+INSERT INTO companies (id, name, vat_number, address) VALUES (3, 'Beta SPA', 'IT000000002', 'Via Solferino 1, Lodi');
 
 -- Users for Platform (company_id=1)
 INSERT INTO users (id, company_id, email, password_hash, role, enabled)

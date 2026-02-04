@@ -64,7 +64,7 @@ public class CustomerService {
         customer.setPhone(trimToNull(request.phone()));
         customer.setVatNumber(vatNumber);
         customer.setPec(normalizeEmail(request.pec()));
-        customer.setAddressLine1(trimToNull(request.addressLine1()));
+        customer.setAddress(trimToNull(request.address()));
         customer.setCity(trimToNull(request.city()));
         customer.setPostalCode(trimToNull(request.postalCode()));
         customer.setCountry(normalizeCountry(request.country()));
@@ -126,8 +126,8 @@ public class CustomerService {
         if (request.pec() != null) {
             customer.setPec(normalizeEmail(request.pec()));
         }
-        if (request.addressLine1() != null) {
-            customer.setAddressLine1(trimToNull(request.addressLine1()));
+        if (request.address() != null) {
+            customer.setAddress(trimToNull(request.address()));
         }
         if (request.city() != null) {
             customer.setCity(trimToNull(request.city()));

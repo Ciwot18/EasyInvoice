@@ -146,11 +146,11 @@ public class Customer {
         this.pec = pec;
     }
 
-    public String getAddressLine1() {
+    public String getAddress() {
         return address;
     }
 
-    public void setAddressLine1(String address) {
+    public void setAddress(String address) {
         this.address = address;
     }
 

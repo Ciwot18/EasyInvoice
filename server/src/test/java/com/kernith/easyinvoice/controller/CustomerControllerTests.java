@@ -160,7 +160,7 @@ class CustomerControllerTests {
             when(customer.getPhone()).thenReturn("123");
             when(customer.getVatNumber()).thenReturn("IT123");
             when(customer.getPec()).thenReturn("pec@acme.test");
-            when(customer.getAddressLine1()).thenReturn("Via Roma 1");
+            when(customer.getAddress()).thenReturn("Via Roma 1");
             when(customer.getCity()).thenReturn("Roma");
             when(customer.getPostalCode()).thenReturn("00100");
             when(customer.getCountry()).thenReturn("IT");
@@ -212,7 +212,7 @@ class CustomerControllerTests {
             when(customer.getPhone()).thenReturn("123");
             when(customer.getVatNumber()).thenReturn("IT123");
             when(customer.getPec()).thenReturn("pec@acme.test");
-            when(customer.getAddressLine1()).thenReturn("Via Roma 1");
+            when(customer.getAddress()).thenReturn("Via Roma 1");
             when(customer.getCity()).thenReturn("Roma");
             when(customer.getPostalCode()).thenReturn("00100");
             when(customer.getCountry()).thenReturn("IT");
@@ -330,7 +330,7 @@ class CustomerControllerTests {
             when(customer.getPhone()).thenReturn("123");
             when(customer.getVatNumber()).thenReturn("IT123");
             when(customer.getPec()).thenReturn("pec@acme.test");
-            when(customer.getAddressLine1()).thenReturn("Via Roma 1");
+            when(customer.getAddress()).thenReturn("Via Roma 1");
             when(customer.getCity()).thenReturn("Roma");
             when(customer.getPostalCode()).thenReturn("00100");
             when(customer.getCountry()).thenReturn("IT");
