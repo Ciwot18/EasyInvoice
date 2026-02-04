@@ -59,7 +59,7 @@ public class QuoteItem {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "discount_type", nullable = false, length = 20)
-    private QuoteItemDiscountType discountType = QuoteItemDiscountType.NONE;
+    private DiscountType discountType = DiscountType.NONE;
 
     @Column(name = "discount_value", nullable = false, precision = 19, scale = 4)
     private BigDecimal discountValue = BigDecimal.ZERO;
@@ -92,7 +92,7 @@ public class QuoteItem {
             BigDecimal quantity,
             BigDecimal unitPrice,
             BigDecimal taxRate,
-            QuoteItemDiscountType discountType,
+            DiscountType discountType,
             BigDecimal discountValue
     ) {
         this.quote = quote;
@@ -173,11 +173,11 @@ public class QuoteItem {
         recalculateLineAmounts();
     }
 
-    public QuoteItemDiscountType getDiscountType() {
+    public DiscountType getDiscountType() {
         return discountType;
     }
 
-    public void setDiscountType(QuoteItemDiscountType discountType) {
+    public void setDiscountType(DiscountType discountType) {
         this.discountType = discountType;
         recalculateLineAmounts();
     }
@@ -233,17 +233,17 @@ public class QuoteItem {
         if (lineSubtotal == null) {
             return null;
         }
-        QuoteItemDiscountType effectiveType = discountType == null ? QuoteItemDiscountType.NONE : discountType;
-        if (effectiveType == QuoteItemDiscountType.NONE) {
+        DiscountType effectiveType = discountType == null ? DiscountType.NONE : discountType;
+        if (effectiveType == DiscountType.NONE) {
             return lineSubtotal;
         }
 
         BigDecimal discountedSubtotal = lineSubtotal;
-        if (effectiveType == QuoteItemDiscountType.PERCENT) {
+        if (effectiveType == DiscountType.PERCENT) {
             BigDecimal percent = discountValue == null ? BigDecimal.ZERO : discountValue;
             BigDecimal discountAmount = lineSubtotal.multiply(percent).divide(BigDecimal.valueOf(100));
             discountedSubtotal = lineSubtotal.subtract(discountAmount);
-        } else if (effectiveType == QuoteItemDiscountType.AMOUNT) {
+        } else if (effectiveType == DiscountType.AMOUNT) {
             BigDecimal amount = discountValue == null ? BigDecimal.ZERO : discountValue;
             discountedSubtotal = lineSubtotal.subtract(amount);
         }

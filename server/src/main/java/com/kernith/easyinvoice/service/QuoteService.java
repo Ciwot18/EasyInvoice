@@ -8,7 +8,7 @@ import com.kernith.easyinvoice.data.model.Customer;
 import com.kernith.easyinvoice.data.model.CustomerStatus;
 import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.data.model.QuoteItem;
-import com.kernith.easyinvoice.data.model.QuoteItemDiscountType;
+import com.kernith.easyinvoice.data.model.DiscountType;
 import com.kernith.easyinvoice.data.model.QuoteStatus;
 import com.kernith.easyinvoice.data.model.UserRole;
 import com.kernith.easyinvoice.data.repository.CompanyRepository;
@@ -96,7 +96,7 @@ public class QuoteService {
                     defaultBigDecimal(itemRequest.quantity(), BigDecimal.ONE),
                     defaultBigDecimal(itemRequest.unitPrice(), BigDecimal.ZERO),
                     defaultBigDecimal(itemRequest.taxRate(), BigDecimal.ZERO),
-                    itemRequest.discountType() == null ? QuoteItemDiscountType.NONE : itemRequest.discountType(),
+                    itemRequest.discountType() == null ? DiscountType.NONE : itemRequest.discountType(),
                     defaultBigDecimal(itemRequest.discountValue(), BigDecimal.ZERO)
             );
             item.setNotes(trimToNull(itemRequest.notes()));

@@ -1,6 +1,6 @@
 package com.kernith.easyinvoice.data.dto.quoteitem;
 
-import com.kernith.easyinvoice.data.model.QuoteItemDiscountType;
+import com.kernith.easyinvoice.data.model.DiscountType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -14,6 +14,6 @@ public record CreateQuoteItemRequest(
         @Size(max = 20) String unit,
         BigDecimal unitPrice,
         BigDecimal taxRate,
-        QuoteItemDiscountType discountType,
+        DiscountType discountType,
         BigDecimal discountValue
 ) {}
