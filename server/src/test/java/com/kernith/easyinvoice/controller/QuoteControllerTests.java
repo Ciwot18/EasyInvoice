@@ -11,6 +11,7 @@ import com.kernith.easyinvoice.data.model.Customer;
 import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.data.model.QuoteStatus;
 import com.kernith.easyinvoice.helper.CurrentUserArgumentResolver;
+import com.kernith.easyinvoice.service.PdfService;
 import com.kernith.easyinvoice.service.QuoteService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -25,16 +26,12 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -50,7 +47,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({
         WebConfig.class,
         CurrentUserArgumentResolver.class,
-        QuoteControllerTests.TestExceptionHandler.class
+        com.kernith.easyinvoice.helper.GlobalExceptionHandler.class
 })
 @ActiveProfiles("test")
 class QuoteControllerTests {
@@ -62,23 +59,11 @@ class QuoteControllerTests {
 
     @MockitoBean
     private QuoteService quoteService;
+    @MockitoBean
+    private PdfService pdfService;
 
     @MockitoBean
     private com.kernith.easyinvoice.service.InvoiceService invoiceService;
-
-    @RestControllerAdvice
-    static class TestExceptionHandler {
-        @ExceptionHandler(RuntimeException.class)
-        ResponseEntity<String> handleRuntime(RuntimeException ex) {
-            if (ex instanceof IllegalStateException stateEx) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(stateEx.getMessage());
-            }
-            if (ex instanceof org.springframework.web.server.ResponseStatusException statusEx) {
-                return ResponseEntity.status(statusEx.getStatusCode()).body("Request error");
-            }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal error");
-        }
-    }
 
     @AfterEach
     void tearDown() {

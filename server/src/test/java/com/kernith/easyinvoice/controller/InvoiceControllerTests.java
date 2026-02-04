@@ -17,6 +17,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+
+import com.kernith.easyinvoice.service.PdfService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -28,15 +30,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -53,7 +52,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import({
         WebConfig.class,
         CurrentUserArgumentResolver.class,
-        InvoiceControllerTests.TestExceptionHandler.class
+        com.kernith.easyinvoice.helper.GlobalExceptionHandler.class
 })
 @ActiveProfiles("test")
 class InvoiceControllerTests {
@@ -65,20 +64,8 @@ class InvoiceControllerTests {
 
     @MockitoBean
     private InvoiceService invoiceService;
-
-    @RestControllerAdvice
-    static class TestExceptionHandler {
-        @ExceptionHandler(RuntimeException.class)
-        ResponseEntity<String> handleRuntime(RuntimeException ex) {
-            if (ex instanceof IllegalStateException stateEx) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(stateEx.getMessage());
-            }
-            if (ex instanceof ResponseStatusException statusEx) {
-                return ResponseEntity.status(statusEx.getStatusCode()).body("Request error");
-            }
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal error");
-        }
-    }
+    @MockitoBean
+    private PdfService pdfService;
 
     @AfterEach
     void tearDown() {
