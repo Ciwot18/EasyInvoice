@@ -22,4 +22,21 @@ public class Utils {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Insufficient role");
         }
     }
+    public static String num4(java.math.BigDecimal v) { return v == null ? "" : v.setScale(4).toPlainString(); }
+    public static String percent2(java.math.BigDecimal v) { return v == null ? "" : v.setScale(2).toPlainString() + "%"; }
+    public static String nvl(String s) { return s == null ? "" : s; }
+
+    public static String money(java.math.BigDecimal v, String currency) {
+        if (v == null) v = java.math.BigDecimal.ZERO;
+        return symbol(currency) + " " + v.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
+    }
+
+    public static String money4(java.math.BigDecimal v, String currency) {
+        if (v == null) v = java.math.BigDecimal.ZERO;
+        return symbol(currency) + " " + v.setScale(4, java.math.RoundingMode.HALF_UP).toPlainString();
+    }
+
+    private static String symbol(String currency) {
+        return "EUR".equalsIgnoreCase(currency) ? "€" : currency; // fallback
+    }
 }
