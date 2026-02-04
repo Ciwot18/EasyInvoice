@@ -1,6 +1,6 @@
 package com.kernith.easyinvoice.data.model;
 
-public enum QuoteItemDiscountType {
+public enum DiscountType {
     NONE,
     PERCENT,
     AMOUNT
