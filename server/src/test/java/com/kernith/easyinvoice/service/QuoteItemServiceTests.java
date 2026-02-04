@@ -155,4 +155,58 @@ class QuoteItemServiceTests {
         AuthPrincipal principal = new AuthPrincipal(7L, 10L, "BACK_OFFICE", List.of());
         assertThrows(ResponseStatusException.class, () -> service.deleteQuoteItem(77L, 55L, principal));
     }
+
+    @Test
+    void listQuoteItemsReturnsItems() {
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        QuoteItemRepository quoteItemRepository = mock(QuoteItemRepository.class);
+        QuoteItemService service = new QuoteItemService(quoteRepository, quoteItemRepository);
+
+        Quote quote = new Quote(new Company(), new Customer(new Company()));
+        quote.setStatus(QuoteStatus.DRAFT);
+        when(quoteRepository.findByIdAndCompanyId(77L, 10L)).thenReturn(Optional.of(quote));
+        when(quoteItemRepository.findByQuoteIdOrderByPositionAsc(quote.getId()))
+                .thenReturn(List.of(new QuoteItem(quote)));
+
+        AuthPrincipal principal = new AuthPrincipal(7L, 10L, "BACK_OFFICE", List.of());
+        List<QuoteItem> items = service.listQuoteItems(77L, principal);
+
+        assertEquals(1, items.size());
+    }
+
+    @Test
+    void deleteQuoteItemReturnsEmptyWhenItemMissing() {
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        QuoteItemRepository quoteItemRepository = mock(QuoteItemRepository.class);
+        QuoteItemService service = new QuoteItemService(quoteRepository, quoteItemRepository);
+
+        Quote quote = new Quote(new Company(), new Customer(new Company()));
+        quote.setStatus(QuoteStatus.DRAFT);
+        when(quoteRepository.findByIdAndCompanyId(77L, 10L)).thenReturn(Optional.of(quote));
+        when(quoteItemRepository.findByIdAndQuoteId(55L, quote.getId())).thenReturn(Optional.empty());
+
+        AuthPrincipal principal = new AuthPrincipal(7L, 10L, "BACK_OFFICE", List.of());
+        assertTrue(service.deleteQuoteItem(77L, 55L, principal).isEmpty());
+    }
+
+    @Test
+    void deleteQuoteItemDeletesAndRecalculatesTotals() {
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        QuoteItemRepository quoteItemRepository = mock(QuoteItemRepository.class);
+        QuoteItemService service = new QuoteItemService(quoteRepository, quoteItemRepository);
+
+        Quote quote = new Quote(new Company(), new Customer(new Company()));
+        quote.setStatus(QuoteStatus.DRAFT);
+        QuoteItem item = new QuoteItem(quote);
+        when(quoteRepository.findByIdAndCompanyId(77L, 10L)).thenReturn(Optional.of(quote));
+        when(quoteItemRepository.findByIdAndQuoteId(55L, quote.getId())).thenReturn(Optional.of(item));
+        when(quoteItemRepository.findByQuoteIdOrderByPositionAsc(quote.getId()))
+                .thenReturn(List.of());
+        when(quoteRepository.save(any(Quote.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        AuthPrincipal principal = new AuthPrincipal(7L, 10L, "BACK_OFFICE", List.of());
+        assertTrue(service.deleteQuoteItem(77L, 55L, principal).isPresent());
+        verify(quoteItemRepository).delete(any(QuoteItem.class));
+        verify(quoteRepository).save(any(Quote.class));
+    }
 }

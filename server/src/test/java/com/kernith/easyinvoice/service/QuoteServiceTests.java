@@ -250,4 +250,59 @@ class QuoteServiceTests {
         AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
         assertTrue(Boolean.FALSE.equals(quoteService.sendQuote(10L, principal)));
     }
+
+    @Test
+    void archiveQuoteUpdatesStatus() {
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        QuoteService quoteService = new QuoteService(
+                quoteRepository,
+                mock(QuoteItemRepository.class),
+                mock(CompanyRepository.class),
+                mock(CustomerRepository.class)
+        );
+        Quote quote = new Quote(new Company(), new Customer(new Company()));
+        quote.setStatus(QuoteStatus.DRAFT);
+        when(quoteRepository.findByIdAndCompanyId(10L, 10L)).thenReturn(Optional.of(quote));
+        when(quoteRepository.save(any(Quote.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
+        assertTrue(Boolean.TRUE.equals(quoteService.archiveQuote(10L, principal)));
+        assertEquals(QuoteStatus.ARCHIVED, quote.getStatus());
+    }
+
+    @Test
+    void convertQuoteThrowsWhenNotAccepted() {
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        QuoteService quoteService = new QuoteService(
+                quoteRepository,
+                mock(QuoteItemRepository.class),
+                mock(CompanyRepository.class),
+                mock(CustomerRepository.class)
+        );
+        Quote quote = new Quote(new Company(), new Customer(new Company()));
+        quote.setStatus(QuoteStatus.SENT);
+        when(quoteRepository.findByIdAndCompanyId(10L, 10L)).thenReturn(Optional.of(quote));
+
+        AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
+        assertThrows(IllegalStateException.class, () -> quoteService.convertQuote(10L, principal));
+    }
+
+    @Test
+    void convertQuoteUpdatesStatusWhenAccepted() {
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        QuoteService quoteService = new QuoteService(
+                quoteRepository,
+                mock(QuoteItemRepository.class),
+                mock(CompanyRepository.class),
+                mock(CustomerRepository.class)
+        );
+        Quote quote = new Quote(new Company(), new Customer(new Company()));
+        quote.setStatus(QuoteStatus.ACCEPTED);
+        when(quoteRepository.findByIdAndCompanyId(10L, 10L)).thenReturn(Optional.of(quote));
+        when(quoteRepository.save(any(Quote.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
+        assertTrue(Boolean.TRUE.equals(quoteService.convertQuote(10L, principal)));
+        assertEquals(QuoteStatus.CONVERTED, quote.getStatus());
+    }
 }

@@ -6,6 +6,7 @@ import com.kernith.easyinvoice.data.dto.customer.UpdateCustomerRequest;
 import com.kernith.easyinvoice.data.model.Company;
 import com.kernith.easyinvoice.data.model.Customer;
 import com.kernith.easyinvoice.data.model.CustomerStatus;
+import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.data.repository.CompanyRepository;
 import com.kernith.easyinvoice.data.repository.CustomerRepository;
 import java.util.List;
@@ -201,5 +202,163 @@ class CustomerServiceTests {
 
         AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
         assertTrue(customerService.deleteCustomer(10L, principal).isEmpty());
+    }
+
+    @Test
+    void createCustomerThrowsWhenCompanyMissing() {
+        CustomerRepository customerRepository = mock(CustomerRepository.class);
+        CompanyRepository companyRepository = mock(CompanyRepository.class);
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        CustomerService customerService = new CustomerService(customerRepository, companyRepository, quoteRepository);
+
+        when(customerRepository.findByCompanyIdAndVatNumberAndStatus(eq(10L), eq("IT123"), eq(CustomerStatus.ACTIVE)))
+                .thenReturn(Optional.empty());
+        when(companyRepository.findById(10L)).thenReturn(Optional.empty());
+
+        AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
+        CreateCustomerRequest req = new CreateCustomerRequest(
+                "Acme Spa",
+                "Acme Spa",
+                "IT123",
+                "info@acme.test",
+                "123",
+                "pec@acme.test",
+                "Via Roma 1",
+                "Roma",
+                "00100",
+                "IT",
+                CustomerStatus.ACTIVE
+        );
+
+        assertThrows(ResponseStatusException.class, () -> customerService.createCustomer(req, principal));
+    }
+
+    @Test
+    void updateCustomerUpdatesFieldsAndNormalizesValues() {
+        CustomerRepository customerRepository = mock(CustomerRepository.class);
+        CompanyRepository companyRepository = mock(CompanyRepository.class);
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        CustomerService customerService = new CustomerService(customerRepository, companyRepository, quoteRepository);
+
+        Customer customer = new Customer(new Company());
+        customer.setVatNumber("IT123");
+        when(customerRepository.findByIdAndCompanyIdAndStatus(10L, 10L, CustomerStatus.ACTIVE))
+                .thenReturn(Optional.of(customer));
+        when(customerRepository.save(any(Customer.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
+        UpdateCustomerRequest req = new UpdateCustomerRequest(
+                " New Name ",
+                " Legal ",
+                " IT123 ",
+                " INFO@ACME.TEST ",
+                " 123 ",
+                " PEC@ACME.TEST ",
+                " Via Roma 2 ",
+                " Roma ",
+                " 00100 ",
+                " it "
+        );
+
+        Customer updated = customerService.updateCustomer(10L, req, principal);
+
+        assertEquals("New Name", updated.getDisplayName());
+        assertEquals("Legal", updated.getLegalName());
+        assertEquals("it123".toUpperCase(), updated.getVatNumber());
+        assertEquals("info@acme.test", updated.getEmail());
+        assertEquals("pec@acme.test", updated.getPec());
+        assertEquals("Via Roma 2", updated.getAddress());
+        assertEquals("Roma", updated.getCity());
+        assertEquals("00100", updated.getPostalCode());
+        assertEquals("IT", updated.getCountry());
+    }
+
+    @Test
+    void updateCustomerThrowsWhenVatAlreadyUsed() {
+        CustomerRepository customerRepository = mock(CustomerRepository.class);
+        CompanyRepository companyRepository = mock(CompanyRepository.class);
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        CustomerService customerService = new CustomerService(customerRepository, companyRepository, quoteRepository);
+
+        Customer customer = new Customer(new Company());
+        customer.setVatNumber("IT123");
+        when(customerRepository.findByIdAndCompanyIdAndStatus(10L, 10L, CustomerStatus.ACTIVE))
+                .thenReturn(Optional.of(customer));
+        when(customerRepository.findByCompanyIdAndVatNumberAndStatus(eq(10L), eq("IT999"), eq(CustomerStatus.ACTIVE)))
+                .thenReturn(Optional.of(new Customer(new Company())));
+
+        AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
+        UpdateCustomerRequest req = new UpdateCustomerRequest(
+                null,
+                null,
+                "IT999",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+
+        assertThrows(ResponseStatusException.class, () -> customerService.updateCustomer(10L, req, principal));
+    }
+
+    @Test
+    void archiveRestoreDeleteCustomerSetStatus() {
+        CustomerRepository customerRepository = mock(CustomerRepository.class);
+        CompanyRepository companyRepository = mock(CompanyRepository.class);
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        CustomerService customerService = new CustomerService(customerRepository, companyRepository, quoteRepository);
+
+        Customer customer = new Customer(new Company());
+        when(customerRepository.findByIdAndCompanyIdAndStatus(10L, 10L, CustomerStatus.ACTIVE))
+                .thenReturn(Optional.of(customer));
+        when(customerRepository.save(any(Customer.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
+
+        assertTrue(customerService.archiveCustomer(10L, principal).isPresent());
+        assertEquals(CustomerStatus.ARCHIVED, customer.getStatus());
+
+        customer.setStatus(CustomerStatus.ACTIVE);
+        assertTrue(customerService.deleteCustomer(10L, principal).isPresent());
+        assertEquals(CustomerStatus.DELETED, customer.getStatus());
+
+        customer.setStatus(CustomerStatus.ARCHIVED);
+        assertTrue(customerService.restoreCustomer(10L, principal).isPresent());
+        assertEquals(CustomerStatus.ACTIVE, customer.getStatus());
+    }
+
+    @Test
+    void listCustomerQuotesReturnsQuotesWhenCustomerExists() {
+        CustomerRepository customerRepository = mock(CustomerRepository.class);
+        CompanyRepository companyRepository = mock(CompanyRepository.class);
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        CustomerService customerService = new CustomerService(customerRepository, companyRepository, quoteRepository);
+
+        when(customerRepository.findByIdAndCompanyIdAndStatus(100L, 10L, CustomerStatus.ACTIVE))
+                .thenReturn(Optional.of(new Customer(new Company())));
+        when(quoteRepository.findByCompanyIdAndCustomerIdOrderByIssueDateDesc(10L, 100L))
+                .thenReturn(List.of(new Quote()));
+
+        AuthPrincipal principal = new AuthPrincipal(7L, 10L, "BACK_OFFICE", List.of());
+        List<Quote> quotes = customerService.listCustomerQuotes(100L, principal);
+
+        assertEquals(1, quotes.size());
+    }
+
+    @Test
+    void listCustomerQuotesThrowsWhenCustomerMissing() {
+        CustomerRepository customerRepository = mock(CustomerRepository.class);
+        CompanyRepository companyRepository = mock(CompanyRepository.class);
+        QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        CustomerService customerService = new CustomerService(customerRepository, companyRepository, quoteRepository);
+
+        when(customerRepository.findByIdAndCompanyIdAndStatus(100L, 10L, CustomerStatus.ACTIVE))
+                .thenReturn(Optional.empty());
+
+        AuthPrincipal principal = new AuthPrincipal(7L, 10L, "BACK_OFFICE", List.of());
+        assertThrows(ResponseStatusException.class, () -> customerService.listCustomerQuotes(100L, principal));
     }
 }
