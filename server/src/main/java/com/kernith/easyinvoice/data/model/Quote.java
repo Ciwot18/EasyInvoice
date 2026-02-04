@@ -186,26 +186,14 @@ public class Quote {
         return subtotalAmount;
     }
 
-    public void setSubtotalAmount(BigDecimal subtotalAmount) {
-        this.subtotalAmount = subtotalAmount;
-    }
-
     public BigDecimal getTaxAmount() {
         recalculateTotalsFromItems(items);
         return taxAmount;
     }
 
-    public void setTaxAmount(BigDecimal taxAmount) {
-        this.taxAmount = taxAmount;
-    }
-
     public BigDecimal getTotalAmount() {
         recalculateTotalsFromItems(items);
         return totalAmount;
-    }
-
-    public void setTotalAmount(BigDecimal totalAmount) {
-        this.totalAmount = totalAmount;
     }
 
     public LocalDateTime getCreatedAt() {
