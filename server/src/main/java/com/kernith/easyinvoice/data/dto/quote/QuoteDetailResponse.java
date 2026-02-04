@@ -21,7 +21,6 @@ public record QuoteDetailResponse(
         BigDecimal totalAmount,
         Long customerId,
         String customerDisplayName,
-        Long createdByUserId,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -41,7 +40,6 @@ public record QuoteDetailResponse(
                 quote.getTotalAmount(),
                 quote.getCustomer() == null ? null : quote.getCustomer().getId(),
                 quote.getCustomer() == null ? null : quote.getCustomer().getDisplayName(),
-                quote.getCreatedByUser() == null ? null : quote.getCreatedByUser().getId(),
                 quote.getCreatedAt(),
                 quote.getUpdatedAt()
         );
