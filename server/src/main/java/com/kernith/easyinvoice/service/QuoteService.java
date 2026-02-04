@@ -156,46 +156,46 @@ public class QuoteService {
     }
 
     public Boolean archiveQuote(Long quoteId, AuthPrincipal principal) {
-        return transitionStatus(quoteId, principal, null, QuoteStatus.ARCHIVED);
+        return transitionStatus(quoteId, principal, QuoteStatus.ARCHIVED);
     }
 
     public Boolean sendQuote(Long quoteId, AuthPrincipal principal) {
-        return transitionStatus(quoteId, principal, QuoteStatus.DRAFT, QuoteStatus.SENT);
+        return transitionStatus(quoteId, principal, QuoteStatus.SENT);
     }
 
     public Boolean acceptQuote(Long quoteId, AuthPrincipal principal) {
-        return transitionStatus(quoteId, principal, QuoteStatus.SENT, QuoteStatus.ACCEPTED);
+        return transitionStatus(quoteId, principal, QuoteStatus.ACCEPTED);
     }
 
     public Boolean rejectQuote(Long quoteId, AuthPrincipal principal) {
-        return transitionStatus(quoteId, principal, QuoteStatus.SENT, QuoteStatus.REJECTED);
+        return transitionStatus(quoteId, principal, QuoteStatus.REJECTED);
     }
 
     public Boolean convertQuote(Long quoteId, AuthPrincipal principal) {
-        return transitionStatus(quoteId, principal, QuoteStatus.ACCEPTED, QuoteStatus.CONVERTED);
+        return transitionStatus(quoteId, principal, QuoteStatus.CONVERTED);
     }
 
-    // TODO: Change this with the Design Pattern STATE
     private Boolean transitionStatus(
             Long quoteId,
             AuthPrincipal principal,
-            QuoteStatus expectedStatus,
             QuoteStatus newStatus
     ) {
-        Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER));
+        Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
         Long companyId = getRequiredCompanyId(principal);
         Optional<Quote> optionalQuote = quoteRepository.findByIdAndCompanyId(quoteId, companyId);
         if (optionalQuote.isEmpty()) {
             return Boolean.FALSE;
         }
         Quote quote = optionalQuote.get();
-        if (expectedStatus != null && quote.getStatus() != expectedStatus) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Invalid status transition from " + quote.getStatus() + " to " + newStatus
-            );
+        switch (newStatus) {
+            case DRAFT -> quote.draft();
+            case SENT -> quote.send();
+            case ACCEPTED -> quote.accept();
+            case REJECTED -> quote.reject();
+            case EXPIRED -> quote.expire();
+            case CONVERTED -> quote.convert();
+            case ARCHIVED -> quote.archive();
         }
-        quote.setStatus(newStatus);
         quoteRepository.save(quote);
         return Boolean.TRUE;
     }

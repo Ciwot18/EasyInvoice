@@ -186,35 +186,36 @@ public class InvoiceService {
     }
 
     public Boolean issueInvoice(Long invoiceId, AuthPrincipal principal) {
-        return transitionStatus(invoiceId, principal, InvoiceStatus.DRAFT, InvoiceStatus.ISSUED);
+        return transitionStatus(invoiceId, principal, InvoiceStatus.ISSUED);
     }
 
     public Boolean payInvoice(Long invoiceId, AuthPrincipal principal) {
-        return transitionStatus(invoiceId, principal, InvoiceStatus.ISSUED, InvoiceStatus.PAID);
+        return transitionStatus(invoiceId, principal, InvoiceStatus.PAID);
     }
 
     public Boolean markInvoiceOverdue(Long invoiceId, AuthPrincipal principal) {
-        return transitionStatus(invoiceId, principal, InvoiceStatus.ISSUED, InvoiceStatus.OVERDUE);
+        return transitionStatus(invoiceId, principal, InvoiceStatus.OVERDUE);
     }
 
-    // TODO: Possibly handle with State Pattern
     private Boolean transitionStatus(
             Long invoiceId,
             AuthPrincipal principal,
-            InvoiceStatus expectedStatus,
             InvoiceStatus newStatus
     ) {
-        Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER));
+        Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
         Long companyId = getRequiredCompanyId(principal);
         Optional<Invoice> optionalInvoice = invoiceRepository.findByIdAndCompanyId(invoiceId, companyId);
         if (optionalInvoice.isEmpty()) {
             return Boolean.FALSE;
         }
         Invoice invoice = optionalInvoice.get();
-        if (expectedStatus != null && invoice.getStatus() != expectedStatus) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid status transition from " + invoice.getStatus() + " to " + newStatus);
+        switch (newStatus) {
+            case DRAFT -> invoice.draft();
+            case ISSUED -> invoice.issue();
+            case PAID -> invoice.pay();
+            case OVERDUE -> invoice.overdue();
+            case ARCHIVED -> invoice.archive();
         }
-        invoice.setStatus(newStatus);
         invoiceRepository.save(invoice);
         return Boolean.TRUE;
     }
