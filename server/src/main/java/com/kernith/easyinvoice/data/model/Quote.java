@@ -1,19 +1,9 @@
 package com.kernith.easyinvoice.data.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import com.kernith.easyinvoice.data.model.state.quote.QuoteState;
+import com.kernith.easyinvoice.data.model.state.quote.QuoteStateFactory;
+import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -45,6 +35,8 @@ public class Quote {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
+    @Transient
+    private QuoteState state;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "customer_id", nullable = false)
@@ -99,6 +91,11 @@ public class Quote {
     public Quote(Company company, Customer customer) {
         this.company = company;
         this.customer = customer;
+    }
+
+    @PostLoad
+    void initState() {
+        this.state = QuoteStateFactory.from(status);
     }
 
     public Long getId() {
@@ -227,5 +224,51 @@ public class Quote {
 
     private BigDecimal defaultAmount(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
+    }
+
+    public void draft() {
+        ensureState();
+        state.draft(this);
+        this.state = QuoteStateFactory.from(status);
+    }
+
+    public void send() {
+        ensureState();
+        state.send(this);
+        this.state = QuoteStateFactory.from(status);
+    }
+
+    public void accept() {
+        ensureState();
+        state.accept(this);
+        this.state = QuoteStateFactory.from(status);
+    }
+
+    public void reject() {
+        ensureState();
+        state.reject(this);
+        this.state = QuoteStateFactory.from(status);
+    }
+
+    public void expire() {
+        ensureState();
+        state.expire(this);
+        this.state = QuoteStateFactory.from(status);
+    }
+
+    public void convert() {
+        ensureState();
+        state.convert(this);
+        this.state = QuoteStateFactory.from(status);
+    }
+
+    public void archive() {
+        ensureState();
+        state.archive(this);
+        this.state = QuoteStateFactory.from(status);
+    }
+
+    private void ensureState() {
+        if (state == null) state = QuoteStateFactory.from(status);
     }
 }
