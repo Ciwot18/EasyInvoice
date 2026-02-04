@@ -6,9 +6,11 @@ import com.kernith.easyinvoice.data.dto.customer.UpdateCustomerRequest;
 import com.kernith.easyinvoice.data.model.Company;
 import com.kernith.easyinvoice.data.model.Customer;
 import com.kernith.easyinvoice.data.model.CustomerStatus;
+import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.data.model.UserRole;
 import com.kernith.easyinvoice.data.repository.CompanyRepository;
 import com.kernith.easyinvoice.data.repository.CustomerRepository;
+import com.kernith.easyinvoice.data.repository.QuoteRepository;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -26,10 +28,16 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final CompanyRepository companyRepository;
+    private final QuoteRepository quoteRepository;
 
-    public CustomerService(CustomerRepository customerRepository, CompanyRepository companyRepository) {
+    public CustomerService(
+            CustomerRepository customerRepository,
+            CompanyRepository companyRepository,
+            QuoteRepository quoteRepository
+    ) {
         this.customerRepository = customerRepository;
         this.companyRepository = companyRepository;
+        this.quoteRepository = quoteRepository;
     }
 
     public Customer createCustomer(CreateCustomerRequest request, AuthPrincipal principal) {
@@ -144,6 +152,22 @@ public class CustomerService {
 
     public Optional<Boolean> restoreCustomer(Long customerId, AuthPrincipal principal) {
         return setCustomerStatus(customerId, principal, CustomerStatus.ACTIVE);
+    }
+
+    public List<Quote> listCustomerQuotes(Long customerId, AuthPrincipal principal) {
+        Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
+        Long companyId = getRequiredCompanyId(principal);
+
+        Optional<Customer> optionalCustomer = customerRepository.findByIdAndCompanyIdAndStatus(
+                customerId,
+                companyId,
+                CustomerStatus.ACTIVE
+        );
+        if (optionalCustomer.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Parameters not valid");
+        }
+
+        return quoteRepository.findByCompanyIdAndCustomerIdOrderByIssueDateDesc(companyId, customerId);
     }
 
     private Optional<Customer> getCustomerById(AuthPrincipal principal, Long customerId, Long companyId) {

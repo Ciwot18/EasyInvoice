@@ -5,10 +5,13 @@ import com.kernith.easyinvoice.data.dto.customer.CreateCustomerRequest;
 import com.kernith.easyinvoice.data.dto.customer.CustomerDetailResponse;
 import com.kernith.easyinvoice.data.dto.customer.CustomerSummaryResponse;
 import com.kernith.easyinvoice.data.dto.customer.UpdateCustomerRequest;
+import com.kernith.easyinvoice.data.dto.quote.QuoteSummaryResponse;
 import com.kernith.easyinvoice.data.model.Customer;
+import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.helper.CurrentUser;
 import com.kernith.easyinvoice.service.CustomerService;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -122,5 +125,17 @@ public class CustomerController {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/customer/{customerId}/quotes")
+    public ResponseEntity<List<QuoteSummaryResponse>> listCustomerQuotes(
+            @PathVariable("customerId") Long customerId,
+            @CurrentUser AuthPrincipal principal
+    ) {
+        List<Quote> quotes = customerService.listCustomerQuotes(customerId, principal);
+        if (quotes.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(quotes.stream().map(QuoteSummaryResponse::from).toList());
     }
 }
