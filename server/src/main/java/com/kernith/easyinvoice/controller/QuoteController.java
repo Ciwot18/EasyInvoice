@@ -5,8 +5,10 @@ import com.kernith.easyinvoice.data.dto.quote.CreateQuoteRequest;
 import com.kernith.easyinvoice.data.dto.quote.QuoteDetailResponse;
 import com.kernith.easyinvoice.data.dto.quote.QuoteSummaryResponse;
 import com.kernith.easyinvoice.data.dto.quote.UpdateQuoteRequest;
+import com.kernith.easyinvoice.data.dto.invoice.InvoiceDetailResponse;
 import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.helper.CurrentUser;
+import com.kernith.easyinvoice.service.InvoiceService;
 import com.kernith.easyinvoice.service.QuoteService;
 import jakarta.validation.Valid;
 import java.util.Optional;
@@ -24,9 +26,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class QuoteController {
 
     private final QuoteService quoteService;
+    private final InvoiceService invoiceService;
 
-    public QuoteController(QuoteService quoteService) {
+    public QuoteController(QuoteService quoteService, InvoiceService invoiceService) {
         this.quoteService = quoteService;
+        this.invoiceService = invoiceService;
     }
 
     @PostMapping("/quotes")
@@ -117,15 +121,11 @@ public class QuoteController {
         return ResponseEntity.noContent().build();
     }
 
-    // TODO: Quando implemento il DesignPattern questa deve anche scrivere la fattura
     @PostMapping("/quotes/{quoteId}/convert")
-    public ResponseEntity<Void> convertQuote(
+    public ResponseEntity<InvoiceDetailResponse> convertQuote(
             @PathVariable("quoteId") Long quoteId,
             @CurrentUser AuthPrincipal principal
     ) {
-        if (!quoteService.convertQuote(quoteId, principal)) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(InvoiceDetailResponse.from(invoiceService.createInvoiceFromQuote(quoteId, principal)));
     }
 }
