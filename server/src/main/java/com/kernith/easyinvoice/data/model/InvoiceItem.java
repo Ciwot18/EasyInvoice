@@ -79,6 +79,8 @@ public class InvoiceItem {
     @Column(name = "updated_at", nullable = false, updatable = false, insertable = false)
     private LocalDateTime updatedAt;
 
+    protected InvoiceItem() {}
+
     public InvoiceItem(Invoice invoice) {
         this.invoice = invoice;
     }
