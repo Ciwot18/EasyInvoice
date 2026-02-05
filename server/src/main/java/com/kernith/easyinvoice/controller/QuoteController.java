@@ -85,6 +85,19 @@ public class QuoteController {
                 .body(pdf);
     }
 
+    @GetMapping("/quotes/{quoteId}/pdf-download")
+    public ResponseEntity<byte[]> getQuoteDownloadPdf(
+            @PathVariable("quoteId") Long quoteId,
+            @CurrentUser AuthPrincipal principal
+    ) {
+        byte[] pdf = pdfService.quotePdf(quoteId, principal);
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/pdf")
+                .header("Content-Disposition", "attachment; filename=quote-" + quoteId + ".pdf")
+                .body(pdf);
+    }
+
     @PatchMapping("/quotes/{quoteId}")
     public ResponseEntity<QuoteDetailResponse> updateQuote(
             @PathVariable("quoteId") Long quoteId,

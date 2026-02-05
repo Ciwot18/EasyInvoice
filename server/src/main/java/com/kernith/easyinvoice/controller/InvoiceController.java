@@ -81,6 +81,19 @@ public class InvoiceController {
                 .body(pdf);
     }
 
+    @GetMapping("/invoices/{invoiceId}/pdf-download")
+    public ResponseEntity<byte[]> getinvoiceDownloadPdf(
+            @PathVariable("invoiceId") Long invoiceId,
+            @CurrentUser AuthPrincipal principal
+    ) {
+        byte[] pdf = pdfService.invoicePdf(invoiceId, principal);
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/pdf")
+                .header("Content-Disposition", "attachment; filename=invoice-" + invoiceId + ".pdf")
+                .body(pdf);
+    }
+
     @PatchMapping("/invoices/{invoiceId}")
     public ResponseEntity<InvoiceDetailResponse> updateInvoice(
             @PathVariable("invoiceId") Long invoiceId,
