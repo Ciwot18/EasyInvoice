@@ -3,6 +3,7 @@ package com.kernith.easyinvoice.controller;
 import com.kernith.easyinvoice.config.AuthPrincipal;
 import com.kernith.easyinvoice.data.dto.invoice.*;
 import com.kernith.easyinvoice.data.model.Invoice;
+import com.kernith.easyinvoice.data.model.InvoicePdfArchive;
 import com.kernith.easyinvoice.helper.CurrentUser;
 import com.kernith.easyinvoice.service.InvoicePdfService;
 import com.kernith.easyinvoice.service.InvoiceService;
@@ -133,14 +134,12 @@ public class InvoiceController {
     }
 
     @PostMapping("/invoices/{invoiceId}/issue")
-    public ResponseEntity<Void> issueInvoice(
+    public ResponseEntity<InvoicePdfArchiveSaveResponse> issueInvoice(
             @PathVariable("invoiceId") Long invoiceId,
             @CurrentUser AuthPrincipal principal
     ) {
-        if (!invoiceService.issueInvoice(invoiceId, principal)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-        return ResponseEntity.noContent().build();
+        InvoicePdfArchive invoicePdfArchive = invoiceService.issueInvoice(invoiceId, principal);
+        return ResponseEntity.ok(InvoicePdfArchiveSaveResponse.from(invoicePdfArchive));
     }
 
     @PostMapping("/invoices/{invoiceId}/pay")
