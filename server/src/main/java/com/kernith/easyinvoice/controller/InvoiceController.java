@@ -113,7 +113,7 @@ public class InvoiceController {
     public ResponseEntity<Resource> downloadPdf(
             @PathVariable Long invoiceId,
             @PathVariable Long saveId,
-            AuthPrincipal principal
+            @CurrentUser AuthPrincipal principal
     ) {
         InvoicePdfDownload pdf = invoicePdfService.download(invoiceId, saveId, principal);
 
