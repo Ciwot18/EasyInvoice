@@ -3,7 +3,9 @@ package com.kernith.easyinvoice.data.model.state.quote;
 import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.data.model.QuoteStatus;
 
-// Se e scaduta allora puoi solamente archiviare
+/**
+ * Expired state: the quote can only be archived.
+ */
 public class ExpiredQuoteState implements QuoteState {
     @Override
     public void draft(Quote quote) {

@@ -3,7 +3,9 @@ package com.kernith.easyinvoice.data.model.state.invoice;
 import com.kernith.easyinvoice.data.model.Invoice;
 import com.kernith.easyinvoice.data.model.InvoiceStatus;
 
-// In draft posso solamente inviare la fattura al cliente o archiviarla
+/**
+ * Draft state: the invoice can be issued or archived.
+ */
 public class DraftInvoiceState implements InvoiceState {
     @Override
     public void draft(Invoice invoice) {

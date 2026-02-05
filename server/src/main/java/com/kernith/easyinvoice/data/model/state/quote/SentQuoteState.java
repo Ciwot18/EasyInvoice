@@ -3,7 +3,9 @@ package com.kernith.easyinvoice.data.model.state.quote;
 import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.data.model.QuoteStatus;
 
-// Un preventivo inviato puo essere accettato/rifiutato altrimenti puo scadere e/o venire archiviato
+/**
+ * Sent state: the quote can be accepted, rejected, expired, or archived.
+ */
 public class SentQuoteState implements QuoteState {
     @Override
     public void draft(Quote quote) {

@@ -3,7 +3,9 @@ package com.kernith.easyinvoice.data.model.state.invoice;
 import com.kernith.easyinvoice.data.model.Invoice;
 import com.kernith.easyinvoice.data.model.InvoiceStatus;
 
-// Una volta che diventa Overdue si puo comunque ancora pagare o archiviare
+/**
+ * Overdue state: the invoice can still be paid or archived.
+ */
 public class OverdueInvoiceState implements InvoiceState {
     @Override
     public void draft(Invoice invoice) {

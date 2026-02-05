@@ -3,7 +3,9 @@ package com.kernith.easyinvoice.data.model.state.quote;
 import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.data.model.QuoteStatus;
 
-// Se il preventivo e stato rifiutato devi tornare in modifica o archiviarlo
+/**
+ * Rejected state: the quote can return to draft or be archived.
+ */
 public class RejectedQuoteState implements QuoteState {
     @Override
     public void draft(Quote quote) {

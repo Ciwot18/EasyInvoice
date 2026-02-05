@@ -3,7 +3,9 @@ package com.kernith.easyinvoice.data.model.state.invoice;
 import com.kernith.easyinvoice.data.model.Invoice;
 import com.kernith.easyinvoice.data.model.InvoiceStatus;
 
-// Una volta Issued puo solamente essere pagata o scadere ma non si puo piu rettificare
+/**
+ * Issued state: the invoice can be paid or marked overdue, but not edited.
+ */
 public class IssuedInvoiceState implements InvoiceState {
     @Override
     public void draft(Invoice invoice) {

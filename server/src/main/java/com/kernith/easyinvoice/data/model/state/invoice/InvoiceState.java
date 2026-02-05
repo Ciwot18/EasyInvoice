@@ -2,6 +2,9 @@ package com.kernith.easyinvoice.data.model.state.invoice;
 
 import com.kernith.easyinvoice.data.model.Invoice;
 
+/**
+ * State contract for invoice lifecycle transitions.
+ */
 public interface InvoiceState {
     void draft(Invoice invoice);
     void issue(Invoice invoice);

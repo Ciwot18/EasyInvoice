@@ -2,7 +2,9 @@ package com.kernith.easyinvoice.data.model.state.invoice;
 
 import com.kernith.easyinvoice.data.model.Invoice;
 
-// Arrivato in archivio la fattura finisce il suo ciclo
+/**
+ * Archived state: the invoice is read-only and the lifecycle is closed.
+ */
 public class ArchivedInvoiceState implements InvoiceState {
     @Override
     public void draft(Invoice invoice) {

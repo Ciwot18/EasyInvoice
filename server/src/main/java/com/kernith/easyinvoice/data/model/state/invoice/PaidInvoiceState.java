@@ -3,7 +3,9 @@ package com.kernith.easyinvoice.data.model.state.invoice;
 import com.kernith.easyinvoice.data.model.Invoice;
 import com.kernith.easyinvoice.data.model.InvoiceStatus;
 
-// Una volta che viene pagata il ciclo termina
+/**
+ * Paid state: the invoice lifecycle is completed.
+ */
 public class PaidInvoiceState implements InvoiceState {
     @Override
     public void draft(Invoice invoice) {

@@ -3,7 +3,9 @@ package com.kernith.easyinvoice.data.model.state.quote;
 import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.data.model.QuoteStatus;
 
-// Una volta convertito in Fattura il Preventivo puo solamente essere archiviato
+/**
+ * Converted state: the quote has been turned into an invoice and can only be archived.
+ */
 public class ConvertedQuoteState implements QuoteState {
     @Override
     public void draft(Quote quote) {

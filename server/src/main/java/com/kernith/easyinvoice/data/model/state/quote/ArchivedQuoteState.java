@@ -2,7 +2,9 @@ package com.kernith.easyinvoice.data.model.state.quote;
 
 import com.kernith.easyinvoice.data.model.Quote;
 
-// Archiviato e solamente consultabile, non puoi essere riaperto
+/**
+ * Archived state: the quote is read-only and cannot be reopened.
+ */
 public class ArchivedQuoteState implements QuoteState {
     @Override
     public void draft(Quote quote) {

@@ -3,7 +3,9 @@ package com.kernith.easyinvoice.data.model.state.quote;
 import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.data.model.QuoteStatus;
 
-// Se il preventivo viene accettato allora si puo convertire o archiviare
+/**
+ * Accepted state: the quote can be converted or archived.
+ */
 public class AcceptedQuoteState implements QuoteState {
     @Override
     public void draft(Quote quote) {

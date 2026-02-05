@@ -3,7 +3,9 @@ package com.kernith.easyinvoice.data.model.state.quote;
 import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.data.model.QuoteStatus;
 
-// Un preventivo puo essere inviato oppure se in altro modo si ha gia avuto conferma/rifiuto si puo direttamente passare a quello stato
+/**
+ * Draft state: the quote can be sent, accepted, rejected, or archived.
+ */
 public class DraftQuoteState implements QuoteState {
     @Override
     public void draft(Quote quote) {
