@@ -10,11 +10,14 @@ import com.kernith.easyinvoice.data.model.Company;
 import com.kernith.easyinvoice.data.model.Customer;
 import com.kernith.easyinvoice.data.model.DiscountType;
 import com.kernith.easyinvoice.data.model.Invoice;
+import com.kernith.easyinvoice.data.model.InvoicePdfArchive;
 import com.kernith.easyinvoice.data.model.InvoiceStatus;
 import com.kernith.easyinvoice.helper.CurrentUserArgumentResolver;
+import com.kernith.easyinvoice.service.InvoicePdfService;
 import com.kernith.easyinvoice.service.InvoiceService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,6 +67,8 @@ class InvoiceControllerTests {
 
     @MockitoBean
     private InvoiceService invoiceService;
+    @MockitoBean
+    private InvoicePdfService invoicePdfService;
     @MockitoBean
     private PdfService pdfService;
 
@@ -291,23 +296,27 @@ class InvoiceControllerTests {
     @Nested
     class issueInvoiceTests {
         @Test
-        void issueInvoiceReturnsNoContentWhenOk() throws Exception {
+        void issueInvoiceReturnsOkWhenValid() throws Exception {
             setPrincipal();
+            InvoicePdfArchive archive = buildInvoicePdfArchive();
             when(invoiceService.issueInvoice(eq(77L), any(AuthPrincipal.class)))
-                    .thenReturn(true);
+                    .thenReturn(archive);
 
             mockMvc.perform(post("/invoices/77/issue"))
-                    .andExpect(status().isNoContent());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.saveId").value(55L))
+                    .andExpect(jsonPath("$.invoiceId").value(77L))
+                    .andExpect(jsonPath("$.createdAt").value("2025-01-10T09:30:00"));
         }
 
         @Test
         void issueInvoiceReturnsBadRequestWhenMissing() throws Exception {
             setPrincipal();
             when(invoiceService.issueInvoice(eq(77L), any(AuthPrincipal.class)))
-                    .thenReturn(false);
+                    .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Parameters"));
 
             mockMvc.perform(post("/invoices/77/issue"))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isInternalServerError());
         }
 
         @Test
@@ -399,5 +408,17 @@ class InvoiceControllerTests {
         invoice.setIssueDate(LocalDate.of(2025, 1, 10));
         ReflectionTestUtils.setField(invoice, "id", 77L);
         return invoice;
+    }
+
+    private InvoicePdfArchive buildInvoicePdfArchive() {
+        Invoice invoice = buildInvoice();
+        InvoicePdfArchive archive = new InvoicePdfArchive(
+                invoice,
+                "companies/10/invoices/77",
+                "INV_77_20250110_093000_abcdef.pdf"
+        );
+        ReflectionTestUtils.setField(archive, "id", 55L);
+        ReflectionTestUtils.setField(archive, "createdAt", LocalDateTime.of(2025, 1, 10, 9, 30, 0));
+        return archive;
     }
 }

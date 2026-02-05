@@ -9,6 +9,7 @@ import com.kernith.easyinvoice.data.model.Customer;
 import com.kernith.easyinvoice.data.model.CustomerStatus;
 import com.kernith.easyinvoice.data.model.DiscountType;
 import com.kernith.easyinvoice.data.model.Invoice;
+import com.kernith.easyinvoice.data.model.InvoicePdfArchive;
 import com.kernith.easyinvoice.data.model.InvoiceStatus;
 import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.data.model.QuoteItem;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,12 +49,14 @@ class InvoiceServiceTests {
         CompanyRepository companyRepository = mock(CompanyRepository.class);
         CustomerRepository customerRepository = mock(CustomerRepository.class);
         QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        InvoicePdfService invoicePdfService = mock(InvoicePdfService.class);
         InvoiceService invoiceService = new InvoiceService(
                 invoiceRepository,
                 invoiceItemRepository,
                 companyRepository,
                 customerRepository,
-                quoteRepository
+                quoteRepository,
+                invoicePdfService
         );
 
         Company company = new Company();
@@ -105,7 +109,8 @@ class InvoiceServiceTests {
                 mock(InvoiceItemRepository.class),
                 mock(CompanyRepository.class),
                 mock(CustomerRepository.class),
-                mock(QuoteRepository.class)
+                mock(QuoteRepository.class),
+                mock(InvoicePdfService.class)
         );
         CreateInvoiceRequest req = new CreateInvoiceRequest(
                 100L,
@@ -129,12 +134,14 @@ class InvoiceServiceTests {
         CompanyRepository companyRepository = mock(CompanyRepository.class);
         CustomerRepository customerRepository = mock(CustomerRepository.class);
         QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        InvoicePdfService invoicePdfService = mock(InvoicePdfService.class);
         InvoiceService invoiceService = new InvoiceService(
                 invoiceRepository,
                 invoiceItemRepository,
                 companyRepository,
                 customerRepository,
-                quoteRepository
+                quoteRepository,
+                invoicePdfService
         );
 
         when(companyRepository.findById(10L)).thenReturn(Optional.of(new Company()));
@@ -164,12 +171,14 @@ class InvoiceServiceTests {
         CompanyRepository companyRepository = mock(CompanyRepository.class);
         CustomerRepository customerRepository = mock(CustomerRepository.class);
         QuoteRepository quoteRepository = mock(QuoteRepository.class);
+        InvoicePdfService invoicePdfService = mock(InvoicePdfService.class);
         InvoiceService invoiceService = new InvoiceService(
                 invoiceRepository,
                 invoiceItemRepository,
                 companyRepository,
                 customerRepository,
-                quoteRepository
+                quoteRepository,
+                invoicePdfService
         );
 
         Company company = new Company();
@@ -210,7 +219,8 @@ class InvoiceServiceTests {
                 mock(InvoiceItemRepository.class),
                 mock(CompanyRepository.class),
                 mock(CustomerRepository.class),
-                mock(QuoteRepository.class)
+                mock(QuoteRepository.class),
+                mock(InvoicePdfService.class)
         );
         AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
 
@@ -225,7 +235,8 @@ class InvoiceServiceTests {
                 mock(InvoiceItemRepository.class),
                 mock(CompanyRepository.class),
                 mock(CustomerRepository.class),
-                mock(QuoteRepository.class)
+                mock(QuoteRepository.class),
+                mock(InvoicePdfService.class)
         );
         when(invoiceRepository.findByIdAndCompanyId(10L, 10L)).thenReturn(Optional.empty());
 
@@ -243,7 +254,8 @@ class InvoiceServiceTests {
                 mock(InvoiceItemRepository.class),
                 mock(CompanyRepository.class),
                 mock(CustomerRepository.class),
-                mock(QuoteRepository.class)
+                mock(QuoteRepository.class),
+                mock(InvoicePdfService.class)
         );
         Invoice invoice = new Invoice(new Company(), new Customer(new Company()));
         invoice.setStatus(InvoiceStatus.ISSUED);
@@ -263,7 +275,8 @@ class InvoiceServiceTests {
                 mock(InvoiceItemRepository.class),
                 mock(CompanyRepository.class),
                 mock(CustomerRepository.class),
-                mock(QuoteRepository.class)
+                mock(QuoteRepository.class),
+                mock(InvoicePdfService.class)
         );
         Invoice invoice = new Invoice(new Company(), new Customer(new Company()));
         invoice.setStatus(InvoiceStatus.DRAFT);
@@ -294,7 +307,8 @@ class InvoiceServiceTests {
                 mock(InvoiceItemRepository.class),
                 mock(CompanyRepository.class),
                 mock(CustomerRepository.class),
-                mock(QuoteRepository.class)
+                mock(QuoteRepository.class),
+                mock(InvoicePdfService.class)
         );
         Page<Invoice> page = new PageImpl<>(List.of(new Invoice(new Company(), new Customer(new Company()))));
         when(invoiceRepository.searchByCompanyId(eq(10L), eq("acme"), any(Pageable.class))).thenReturn(page);
@@ -313,7 +327,8 @@ class InvoiceServiceTests {
                 mock(InvoiceItemRepository.class),
                 mock(CompanyRepository.class),
                 mock(CustomerRepository.class),
-                mock(QuoteRepository.class)
+                mock(QuoteRepository.class),
+                mock(InvoicePdfService.class)
         );
         Page<Invoice> page = new PageImpl<>(List.of());
         when(invoiceRepository.findByCompanyId(eq(10L), any(Pageable.class))).thenReturn(page);
@@ -333,7 +348,8 @@ class InvoiceServiceTests {
                 mock(InvoiceItemRepository.class),
                 mock(CompanyRepository.class),
                 mock(CustomerRepository.class),
-                mock(QuoteRepository.class)
+                mock(QuoteRepository.class),
+                mock(InvoicePdfService.class)
         );
         Invoice invoice = new Invoice(new Company(), new Customer(new Company()));
         invoice.setStatus(InvoiceStatus.DRAFT);
@@ -346,36 +362,45 @@ class InvoiceServiceTests {
     @Test
     void transitionReturnsFalseWhenMissing() {
         InvoiceRepository invoiceRepository = mock(InvoiceRepository.class);
+        InvoicePdfService invoicePdfService = mock(InvoicePdfService.class);
         InvoiceService invoiceService = new InvoiceService(
                 invoiceRepository,
                 mock(InvoiceItemRepository.class),
                 mock(CompanyRepository.class),
                 mock(CustomerRepository.class),
-                mock(QuoteRepository.class)
+                mock(QuoteRepository.class),
+                invoicePdfService
         );
         when(invoiceRepository.findByIdAndCompanyId(10L, 10L)).thenReturn(Optional.empty());
+        when(invoicePdfService.saveIssuedPdf(eq(10L), any(AuthPrincipal.class)))
+                .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Parameters"));
 
         AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
-        assertTrue(Boolean.FALSE.equals(invoiceService.issueInvoice(10L, principal)));
+        assertThrows(ResponseStatusException.class, () -> invoiceService.issueInvoice(10L, principal));
     }
 
     @Test
     void transitionUpdatesStatusWhenValid() {
         InvoiceRepository invoiceRepository = mock(InvoiceRepository.class);
+        InvoicePdfService invoicePdfService = mock(InvoicePdfService.class);
         InvoiceService invoiceService = new InvoiceService(
                 invoiceRepository,
                 mock(InvoiceItemRepository.class),
                 mock(CompanyRepository.class),
                 mock(CustomerRepository.class),
-                mock(QuoteRepository.class)
+                mock(QuoteRepository.class),
+                invoicePdfService
         );
         Invoice invoice = new Invoice(new Company(), new Customer(new Company()));
         invoice.setStatus(InvoiceStatus.DRAFT);
         when(invoiceRepository.findByIdAndCompanyId(10L, 10L)).thenReturn(Optional.of(invoice));
         when(invoiceRepository.save(any(Invoice.class))).thenAnswer(inv -> inv.getArgument(0));
+        InvoicePdfArchive archive = new InvoicePdfArchive(invoice, "companies/10/invoices/10", "INV_10_test.pdf");
+        when(invoicePdfService.saveIssuedPdf(eq(10L), any(AuthPrincipal.class))).thenReturn(archive);
 
         AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
-        assertTrue(Boolean.TRUE.equals(invoiceService.issueInvoice(10L, principal)));
+        assertEquals(archive, invoiceService.issueInvoice(10L, principal));
         assertEquals(InvoiceStatus.ISSUED, invoice.getStatus());
+        verify(invoicePdfService).saveIssuedPdf(eq(10L), any(AuthPrincipal.class));
     }
 }

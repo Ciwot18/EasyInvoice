@@ -109,9 +109,9 @@ class PdfAdapterTests {
         assertEquals("Acme Spa", adapter.customerName());
         assertEquals("EUR", adapter.currency());
         assertEquals("", adapter.notes());
-        assertTrue(adapter.subtotalLabel().endsWith(" EUR"));
-        assertTrue(adapter.taxLabel().endsWith(" EUR"));
-        assertTrue(adapter.totalLabel().endsWith(" EUR"));
+        assertTrue(adapter.subtotalLabel().startsWith("€ "));
+        assertTrue(adapter.taxLabel().startsWith("€ "));
+        assertTrue(adapter.totalLabel().startsWith("€ "));
         assertFalse(adapter.lines().isEmpty());
     }
 
