@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Quote aggregate root with state-driven status transitions and total calculations.
+ */
 @Entity
 @Table(
         name = "quotes",
@@ -93,6 +96,9 @@ public class Quote {
         this.customer = customer;
     }
 
+    /**
+     * Initializes the state handler after the entity is loaded.
+     */
     @PostLoad
     void initState() {
         this.state = QuoteStateFactory.from(status);
@@ -134,6 +140,11 @@ public class Quote {
         return status;
     }
 
+    /**
+     * Updates the status and refreshes the internal state handler.
+     *
+     * @param status new status
+     */
     public void setStatus(QuoteStatus status) {
         this.status = status;
         if (status != null) {
@@ -183,16 +194,31 @@ public class Quote {
         this.currency = currency;
     }
 
+    /**
+     * Returns the subtotal amount, recalculating from items if needed.
+     *
+     * @return subtotal amount
+     */
     public BigDecimal getSubtotalAmount() {
         recalculateTotalsFromItems(items);
         return subtotalAmount;
     }
 
+    /**
+     * Returns the tax amount, recalculating from items if needed.
+     *
+     * @return tax amount
+     */
     public BigDecimal getTaxAmount() {
         recalculateTotalsFromItems(items);
         return taxAmount;
     }
 
+    /**
+     * Returns the total amount, recalculating from items if needed.
+     *
+     * @return total amount
+     */
     public BigDecimal getTotalAmount() {
         recalculateTotalsFromItems(items);
         return totalAmount;
@@ -206,6 +232,11 @@ public class Quote {
         return updatedAt;
     }
 
+    /**
+     * Recalculates subtotal, tax, and total amounts from the given items list.
+     *
+     * @param items quote items used for totals
+     */
     public void recalculateTotalsFromItems(List<QuoteItem> items) {
         BigDecimal subtotal = BigDecimal.ZERO;
         BigDecimal tax = BigDecimal.ZERO;
@@ -227,52 +258,82 @@ public class Quote {
         this.totalAmount = total;
     }
 
+    /**
+     * Returns zero for null monetary values.
+     *
+     * @param value input amount
+     * @return non-null amount
+     */
     private BigDecimal defaultAmount(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
     }
 
+    /**
+     * Transitions the quote to DRAFT if allowed by the current state.
+     */
     public void draft() {
         ensureState();
         state.draft(this);
         this.state = QuoteStateFactory.from(status);
     }
 
+    /**
+     * Transitions the quote to SENT if allowed by the current state.
+     */
     public void send() {
         ensureState();
         state.send(this);
         this.state = QuoteStateFactory.from(status);
     }
 
+    /**
+     * Transitions the quote to ACCEPTED if allowed by the current state.
+     */
     public void accept() {
         ensureState();
         state.accept(this);
         this.state = QuoteStateFactory.from(status);
     }
 
+    /**
+     * Transitions the quote to REJECTED if allowed by the current state.
+     */
     public void reject() {
         ensureState();
         state.reject(this);
         this.state = QuoteStateFactory.from(status);
     }
 
+    /**
+     * Transitions the quote to EXPIRED if allowed by the current state.
+     */
     public void expire() {
         ensureState();
         state.expire(this);
         this.state = QuoteStateFactory.from(status);
     }
 
+    /**
+     * Transitions the quote to CONVERTED if allowed by the current state.
+     */
     public void convert() {
         ensureState();
         state.convert(this);
         this.state = QuoteStateFactory.from(status);
     }
 
+    /**
+     * Transitions the quote to ARCHIVED if allowed by the current state.
+     */
     public void archive() {
         ensureState();
         state.archive(this);
         this.state = QuoteStateFactory.from(status);
     }
 
+    /**
+     * Ensures a state handler is available before transitions.
+     */
     private void ensureState() {
         if (state == null) state = QuoteStateFactory.from(status);
     }

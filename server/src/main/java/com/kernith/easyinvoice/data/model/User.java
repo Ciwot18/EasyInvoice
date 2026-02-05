@@ -3,6 +3,9 @@ package com.kernith.easyinvoice.data.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
+/**
+ * User entity used for authentication and authorization.
+ */
 @Entity
 @Table(
         name = "users",

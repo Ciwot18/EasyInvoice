@@ -13,6 +13,9 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 
+/**
+ * Stores metadata for archived invoice PDF files.
+ */
 @Entity
 @Table(
         name = "invoice_pdf_archive",

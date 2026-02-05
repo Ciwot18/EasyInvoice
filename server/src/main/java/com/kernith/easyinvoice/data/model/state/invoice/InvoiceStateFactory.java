@@ -3,6 +3,9 @@ package com.kernith.easyinvoice.data.model.state.invoice;
 import com.kernith.easyinvoice.data.model.Invoice;
 import com.kernith.easyinvoice.data.model.InvoiceStatus;
 
+/**
+ * Factory that maps invoice status to the appropriate state handler.
+ */
 public class InvoiceStateFactory {
     private InvoiceStateFactory() {}
 

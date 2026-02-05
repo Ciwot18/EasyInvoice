@@ -3,6 +3,9 @@ package com.kernith.easyinvoice.data.model.state.quote;
 import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.data.model.QuoteStatus;
 
+/**
+ * Factory that maps quote status to the appropriate state handler.
+ */
 public class QuoteStateFactory {
     private QuoteStateFactory() {}
 

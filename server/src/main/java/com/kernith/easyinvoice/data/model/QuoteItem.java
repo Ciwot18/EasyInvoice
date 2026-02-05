@@ -16,6 +16,9 @@ import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Line item for a quote, including calculated amounts and discounts.
+ */
 @Entity
 @Table(
         name = "quote_items",
@@ -214,6 +217,9 @@ public class QuoteItem {
         return updatedAt;
     }
 
+    /**
+     * Recalculates subtotal, tax, and total amounts for this line.
+     */
     private void recalculateLineAmounts() {
         BigDecimal effectiveQuantity = quantity == null ? BigDecimal.ONE : quantity;
         BigDecimal effectiveUnitPrice = unitPrice == null ? BigDecimal.ZERO : unitPrice;
@@ -229,6 +235,12 @@ public class QuoteItem {
         this.lineTotalAmount = lineTotal;
     }
 
+    /**
+     * Applies the configured discount to the given subtotal.
+     *
+     * @param lineSubtotal subtotal before discount
+     * @return discounted subtotal (never negative)
+     */
     private BigDecimal applyDiscount(BigDecimal lineSubtotal) {
         if (lineSubtotal == null) {
             return null;

@@ -15,6 +15,9 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 
+/**
+ * Customer entity belonging to a company, with contact and billing details.
+ */
 @Entity
 @Table(
         name = "customers",

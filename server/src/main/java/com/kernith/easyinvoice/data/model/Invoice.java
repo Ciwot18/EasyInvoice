@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Invoice aggregate root with state-driven status transitions and total calculations.
+ */
 @Entity
 @Table(
         name = "invoices",
@@ -99,6 +102,11 @@ public class Invoice {
         this.customer = customer;
     }
 
+    /**
+     * Creates an invoice by copying data and items from a quote.
+     *
+     * @param quote source quote (nullable)
+     */
     public Invoice(Quote quote) {
         if (quote == null) {
             return;
@@ -122,6 +130,9 @@ public class Invoice {
         }
     }
 
+    /**
+     * Initializes the state handler after the entity is loaded.
+     */
     @PostLoad
     void initState() {
         this.state = InvoiceStateFactory.from(status);
@@ -167,6 +178,11 @@ public class Invoice {
         return status;
     }
 
+    /**
+     * Updates the status and refreshes the internal state handler.
+     *
+     * @param status new status
+     */
     public void setStatus(InvoiceStatus status) {
         this.status = status;
         if (status != null) {
@@ -216,16 +232,31 @@ public class Invoice {
         this.currency = currency;
     }
 
+    /**
+     * Returns the subtotal amount, recalculating from items if needed.
+     *
+     * @return subtotal amount
+     */
     public BigDecimal getSubtotalAmount() {
         recalculateTotalsFromItems(items);
         return subtotalAmount;
     }
 
+    /**
+     * Returns the tax amount, recalculating from items if needed.
+     *
+     * @return tax amount
+     */
     public BigDecimal getTaxAmount() {
         recalculateTotalsFromItems(items);
         return taxAmount;
     }
 
+    /**
+     * Returns the total amount, recalculating from items if needed.
+     *
+     * @return total amount
+     */
     public BigDecimal getTotalAmount() {
         recalculateTotalsFromItems(items);
         return totalAmount;
@@ -239,6 +270,11 @@ public class Invoice {
         return updatedAt;
     }
 
+    /**
+     * Recalculates subtotal, tax, and total amounts from the given items list.
+     *
+     * @param items invoice items used for totals
+     */
     public void recalculateTotalsFromItems(List<InvoiceItem> items) {
         BigDecimal subtotal = BigDecimal.ZERO;
         BigDecimal tax = BigDecimal.ZERO;
@@ -260,40 +296,64 @@ public class Invoice {
         this.totalAmount = total;
     }
 
+    /**
+     * Returns zero for null monetary values.
+     *
+     * @param value input amount
+     * @return non-null amount
+     */
     private BigDecimal defaultAmount(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
     }
 
+    /**
+     * Transitions the invoice to DRAFT if allowed by the current state.
+     */
     public void draft() {
         ensureState();
         state.draft(this);
         this.state = InvoiceStateFactory.from(status);
     }
 
+    /**
+     * Transitions the invoice to ISSUED if allowed by the current state.
+     */
     public void issue() {
         ensureState();
         state.issue(this);
         this.state = InvoiceStateFactory.from(status);
     }
 
+    /**
+     * Transitions the invoice to PAID if allowed by the current state.
+     */
     public void pay() {
         ensureState();
         state.pay(this);
         this.state = InvoiceStateFactory.from(status);
     }
 
+    /**
+     * Transitions the invoice to OVERDUE if allowed by the current state.
+     */
     public void overdue() {
         ensureState();
         state.overdue(this);
         this.state = InvoiceStateFactory.from(status);
     }
 
+    /**
+     * Transitions the invoice to ARCHIVED if allowed by the current state.
+     */
     public void archive() {
         ensureState();
         state.archive(this);
         this.state = InvoiceStateFactory.from(status);
     }
 
+    /**
+     * Ensures a state handler is available before transitions.
+     */
     private void ensureState() {
         if (state == null) {
             state = InvoiceStateFactory.from(status);

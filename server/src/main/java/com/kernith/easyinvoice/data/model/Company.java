@@ -8,6 +8,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
+/**
+ * Company entity that owns users, customers, quotes, and invoices.
+ */
 @Entity
 @Table(name = "companies")
 public class Company {

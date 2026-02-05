@@ -16,6 +16,9 @@ import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Line item for an invoice, including calculated amounts and discounts.
+ */
 @Entity
 @Table(
         name = "invoice_items",
@@ -85,6 +88,12 @@ public class InvoiceItem {
         this.invoice = invoice;
     }
 
+    /**
+     * Creates an invoice item by copying values from a quote item.
+     *
+     * @param invoice owning invoice
+     * @param quoteItem source quote item
+     */
     public InvoiceItem(Invoice invoice, QuoteItem quoteItem) {
         this.invoice = invoice;
         if (quoteItem != null) {
@@ -230,6 +239,9 @@ public class InvoiceItem {
         return updatedAt;
     }
 
+    /**
+     * Recalculates subtotal, tax, and total amounts for this line.
+     */
     private void recalculateLineAmounts() {
         BigDecimal effectiveQuantity = quantity == null ? BigDecimal.ONE : quantity;
         BigDecimal effectiveUnitPrice = unitPrice == null ? BigDecimal.ZERO : unitPrice;
@@ -245,6 +257,12 @@ public class InvoiceItem {
         this.lineTotalAmount = lineTotal;
     }
 
+    /**
+     * Applies the configured discount to the given subtotal.
+     *
+     * @param lineSubtotal subtotal before discount
+     * @return discounted subtotal (never negative)
+     */
     private BigDecimal applyDiscount(BigDecimal lineSubtotal) {
         if (lineSubtotal == null) {
             return null;
@@ -271,6 +289,12 @@ public class InvoiceItem {
         return discountedSubtotal;
     }
 
+    /**
+     * Maps a nullable discount type to a safe enum value.
+     *
+     * @param quoteDiscountType discount type from quote
+     * @return non-null discount type
+     */
     private DiscountType mapDiscountType(DiscountType quoteDiscountType) {
         if (quoteDiscountType == null) {
             return DiscountType.NONE;
