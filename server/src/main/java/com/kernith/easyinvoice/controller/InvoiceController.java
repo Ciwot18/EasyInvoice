@@ -1,18 +1,21 @@
 package com.kernith.easyinvoice.controller;
 
 import com.kernith.easyinvoice.config.AuthPrincipal;
-import com.kernith.easyinvoice.data.dto.invoice.CreateInvoiceRequest;
-import com.kernith.easyinvoice.data.dto.invoice.InvoiceDetailResponse;
-import com.kernith.easyinvoice.data.dto.invoice.InvoiceSummaryResponse;
-import com.kernith.easyinvoice.data.dto.invoice.UpdateInvoiceRequest;
+import com.kernith.easyinvoice.data.dto.invoice.*;
 import com.kernith.easyinvoice.data.model.Invoice;
 import com.kernith.easyinvoice.helper.CurrentUser;
+import com.kernith.easyinvoice.service.InvoicePdfService;
 import com.kernith.easyinvoice.service.InvoiceService;
 import com.kernith.easyinvoice.service.PdfService;
 import jakarta.validation.Valid;
+
+import java.util.List;
 import java.util.Optional;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -27,10 +30,12 @@ public class InvoiceController {
 
     private final InvoiceService invoiceService;
     private final PdfService pdfService;
+    private final InvoicePdfService invoicePdfService;
 
-    public InvoiceController(InvoiceService invoiceService, PdfService pdfService) {
+    public InvoiceController(InvoiceService invoiceService, PdfService pdfService, InvoicePdfService invoicePdfService) {
         this.invoiceService = invoiceService;
         this.pdfService = pdfService;
+        this.invoicePdfService = invoicePdfService;
     }
 
     @PostMapping("/invoices")
@@ -92,6 +97,30 @@ public class InvoiceController {
                 .header("Content-Type", "application/pdf")
                 .header("Content-Disposition", "attachment; filename=invoice-" + invoiceId + ".pdf")
                 .body(pdf);
+    }
+
+    @GetMapping("/invoices/{invoiceId}/pdfs")
+    public ResponseEntity<List<InvoicePdfDto>> listPdfs(
+            @PathVariable Long invoiceId,
+            @CurrentUser AuthPrincipal principal
+    ) {
+        List<InvoicePdfDto> pdfs = invoicePdfService.listVersions(invoiceId, principal);
+        return ResponseEntity.ok(pdfs);
+    }
+
+    @GetMapping("/invoices/{invoiceId}/pdfs/{saveId}")
+    public ResponseEntity<Resource> downloadPdf(
+            @PathVariable Long invoiceId,
+            @PathVariable Long saveId,
+            AuthPrincipal principal
+    ) {
+        InvoicePdfDownload pdf = invoicePdfService.download(invoiceId, saveId, principal);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + pdf.fileName() + "\"")
+                .body(pdf.resource());
     }
 
     @PatchMapping("/invoices/{invoiceId}")
