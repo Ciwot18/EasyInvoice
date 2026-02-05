@@ -76,9 +76,10 @@ public class InvoicePdfService {
     public InvoicePdfArchive saveIssuedPdf(Long invoiceId, AuthPrincipal principal) {
         Long companyId = getRequiredCompanyId(principal);
         Invoice invoice = getRequiredInvoice(invoiceId, companyId);
+        Long customerId = getRequiredCustomerId(invoice);
 
         LocalDateTime now = LocalDateTime.now();
-        String relativeDir = "companies/" + companyId + "/invoices/" + invoiceId;
+        String relativeDir = "companies/" + companyId + "/customers/" + customerId + "/invoices/" + invoiceId;
 
         String fileName = buildUniqueFileName(invoiceId, now);
         byte[] pdfBytes = pdfService.invoicePdf(invoiceId, principal);
@@ -111,6 +112,17 @@ public class InvoicePdfService {
     private Invoice getRequiredInvoice(Long invoiceId, Long companyId) {
         return invoiceRepository.findByIdAndCompanyId(invoiceId, companyId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Parameters"));
+    }
+
+    private Long getRequiredCustomerId(Invoice invoice) {
+        if (invoice == null || invoice.getCustomer() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing customer");
+        }
+        Long customerId = invoice.getCustomer().getId();
+        if (customerId == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing customer");
+        }
+        return customerId;
     }
 
     private Long getRequiredCompanyId(AuthPrincipal principal) {
