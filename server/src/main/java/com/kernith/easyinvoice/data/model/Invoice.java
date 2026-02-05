@@ -169,6 +169,11 @@ public class Invoice {
 
     public void setStatus(InvoiceStatus status) {
         this.status = status;
+        if (status != null) {
+            this.state = InvoiceStateFactory.from(status);
+        } else {
+            this.state = null;
+        }
     }
 
     public String getTitle() {

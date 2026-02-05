@@ -136,6 +136,11 @@ public class Quote {
 
     public void setStatus(QuoteStatus status) {
         this.status = status;
+        if (status != null) {
+            this.state = QuoteStateFactory.from(status);
+        } else {
+            this.state = null;
+        }
     }
 
     public String getTitle() {
