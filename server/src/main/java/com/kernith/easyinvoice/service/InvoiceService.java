@@ -3,20 +3,8 @@ package com.kernith.easyinvoice.service;
 import com.kernith.easyinvoice.config.AuthPrincipal;
 import com.kernith.easyinvoice.data.dto.invoice.CreateInvoiceRequest;
 import com.kernith.easyinvoice.data.dto.invoice.UpdateInvoiceRequest;
-import com.kernith.easyinvoice.data.model.Company;
-import com.kernith.easyinvoice.data.model.Customer;
-import com.kernith.easyinvoice.data.model.CustomerStatus;
-import com.kernith.easyinvoice.data.model.Invoice;
-import com.kernith.easyinvoice.data.model.InvoiceItem;
-import com.kernith.easyinvoice.data.model.InvoiceStatus;
-import com.kernith.easyinvoice.data.model.Quote;
-import com.kernith.easyinvoice.data.model.DiscountType;
-import com.kernith.easyinvoice.data.model.UserRole;
-import com.kernith.easyinvoice.data.repository.CompanyRepository;
-import com.kernith.easyinvoice.data.repository.CustomerRepository;
-import com.kernith.easyinvoice.data.repository.InvoiceItemRepository;
-import com.kernith.easyinvoice.data.repository.InvoiceRepository;
-import com.kernith.easyinvoice.data.repository.QuoteRepository;
+import com.kernith.easyinvoice.data.model.*;
+import com.kernith.easyinvoice.data.repository.*;
 import com.kernith.easyinvoice.helper.Utils;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -39,19 +27,22 @@ public class InvoiceService {
     private final CompanyRepository companyRepository;
     private final CustomerRepository customerRepository;
     private final QuoteRepository quoteRepository;
+    private final InvoicePdfService invoicePdfService;
 
     public InvoiceService(
             InvoiceRepository invoiceRepository,
             InvoiceItemRepository invoiceItemRepository,
             CompanyRepository companyRepository,
             CustomerRepository customerRepository,
-            QuoteRepository quoteRepository
+            QuoteRepository quoteRepository,
+            InvoicePdfService invoicePdfService
     ) {
         this.invoiceRepository = invoiceRepository;
         this.invoiceItemRepository = invoiceItemRepository;
         this.companyRepository = companyRepository;
         this.customerRepository = customerRepository;
         this.quoteRepository = quoteRepository;
+        this.invoicePdfService = invoicePdfService;
     }
 
     public Invoice createInvoice(CreateInvoiceRequest request, AuthPrincipal principal) {
@@ -185,8 +176,9 @@ public class InvoiceService {
         return invoiceRepository.searchByCompanyId(companyId, q.trim(), pageRequest);
     }
 
-    public Boolean issueInvoice(Long invoiceId, AuthPrincipal principal) {
-        return transitionStatus(invoiceId, principal, InvoiceStatus.ISSUED);
+    public InvoicePdfArchive issueInvoice(Long invoiceId, AuthPrincipal principal) {
+        Boolean result = transitionStatus(invoiceId, principal, InvoiceStatus.ISSUED);
+        return invoicePdfService.saveIssuedPdf(invoiceId, principal);
     }
 
     public Boolean payInvoice(Long invoiceId, AuthPrincipal principal) {
