@@ -42,8 +42,8 @@ public class QuotePdfAdapter implements PdfDocumentView {
     public String customerVAT() { return quote.getCustomer().getVatNumber(); }
     @Override
     public String customerEmail() {
-        String email = quote.getCustomer().getEmail();
-        String pec = quote.getCustomer().getPec();
+        String email = nvl(quote.getCustomer().getEmail());
+        String pec = nvl(quote.getCustomer().getPec());
         if (!email.isBlank()) {
             return email;
         }

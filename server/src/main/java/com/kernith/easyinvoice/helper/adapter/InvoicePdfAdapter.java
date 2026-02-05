@@ -40,8 +40,8 @@ public final class InvoicePdfAdapter implements PdfDocumentView {
     public String customerVAT() { return invoice.getCustomer().getVatNumber(); }
     @Override
     public String customerEmail() {
-        String email = invoice.getCustomer().getEmail();
-        String pec = invoice.getCustomer().getPec();
+        String email = nvl(invoice.getCustomer().getEmail());
+        String pec = nvl(invoice.getCustomer().getPec());
         if (!email.isBlank()) {
             return email;
         }
