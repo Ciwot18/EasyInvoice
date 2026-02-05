@@ -5,7 +5,7 @@ CREATE TABLE invoice_pdf_archive (
     file_name VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_invoice_pdf_archive_invoice FOREIGN KEY (invoice_id) REFERENCES invoice(id) ON DELETE CASCADE,
+    CONSTRAINT fk_invoice_pdf_archive_invoice FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE,
     CONSTRAINT uq_invoice_pdf_archive_path_filename UNIQUE (path, file_name)
 );
 
