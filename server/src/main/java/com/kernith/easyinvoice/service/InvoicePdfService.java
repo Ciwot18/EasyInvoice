@@ -28,16 +28,19 @@ import java.util.List;
 public class InvoicePdfService {
     private final InvoicePdfArchiveRepository archiveRepository;
     private final InvoiceRepository invoiceRepository;
+    private final PdfService pdfService;
     private final Path storageRoot;
 
     public InvoicePdfService(
             InvoicePdfArchiveRepository archiveRepository,
             InvoiceRepository invoiceRepository,
+            PdfService pdfService,
             @Value("${storage.root:storage}") String storageRoot
     ) {
         this.archiveRepository = archiveRepository;
         this.invoiceRepository = invoiceRepository;
         this.storageRoot = Paths.get(storageRoot).toAbsolutePath().normalize();
+        this.pdfService = pdfService;
     }
 
     @Transactional(readOnly = true)
@@ -70,7 +73,7 @@ public class InvoicePdfService {
     }
 
     @Transactional
-    public InvoicePdfArchive saveIssuedPdf(Long invoiceId, byte[] pdfBytes, AuthPrincipal principal) {
+    public InvoicePdfArchive saveIssuedPdf(Long invoiceId, AuthPrincipal principal) {
         Long companyId = getRequiredCompanyId(principal);
         Invoice invoice = getRequiredInvoice(invoiceId, companyId);
 
@@ -78,7 +81,7 @@ public class InvoicePdfService {
         String relativeDir = "companies/" + companyId + "/invoices/" + invoiceId;
 
         String fileName = buildUniqueFileName(invoiceId, now);
-
+        byte[] pdfBytes = pdfService.invoicePdf(invoiceId, principal);
         try {
             Path dirPath = resolveStorageDirectory(relativeDir);
             Files.createDirectories(dirPath);
