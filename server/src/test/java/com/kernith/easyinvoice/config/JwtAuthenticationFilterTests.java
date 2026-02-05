@@ -42,7 +42,7 @@ class JwtAuthenticationFilterTests {
         assertTrue(filter.shouldNotFilter(errorRequest));
 
         MockHttpServletRequest apiRequest = new MockHttpServletRequest();
-        apiRequest.setRequestURI("/api/platform/companies");
+        apiRequest.setRequestURI("/platform/companies");
         assertTrue(!filter.shouldNotFilter(apiRequest));
     }
 
@@ -52,7 +52,7 @@ class JwtAuthenticationFilterTests {
         JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/api/platform/companies");
+        request.setRequestURI("/platform/companies");
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain chain = mock(FilterChain.class);
 
@@ -69,7 +69,7 @@ class JwtAuthenticationFilterTests {
         JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/api/platform/companies");
+        request.setRequestURI("/platform/companies");
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer badtoken");
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain chain = mock(FilterChain.class);
@@ -92,7 +92,7 @@ class JwtAuthenticationFilterTests {
         JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/api/platform/companies");
+        request.setRequestURI("/platform/companies");
         request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer goodtoken");
         MockHttpServletResponse response = new MockHttpServletResponse();
         FilterChain chain = mock(FilterChain.class);

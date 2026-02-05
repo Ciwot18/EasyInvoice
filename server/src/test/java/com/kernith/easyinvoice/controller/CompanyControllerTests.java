@@ -88,7 +88,7 @@ class CompanyControllerTests {
             when(companyService.createCompany(any(CreateCompanyRequest.class), any(AuthPrincipal.class)))
                     .thenReturn(res);
 
-            mockMvc.perform(post("/api/platform/companies")
+            mockMvc.perform(post("/platform/companies")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isCreated())
@@ -104,7 +104,7 @@ class CompanyControllerTests {
             when(companyService.createCompany(any(CreateCompanyRequest.class), any(AuthPrincipal.class)))
                     .thenThrow(new RuntimeException("boom"));
 
-            mockMvc.perform(post("/api/platform/companies")
+            mockMvc.perform(post("/platform/companies")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isInternalServerError())
@@ -121,7 +121,7 @@ class CompanyControllerTests {
             when(companyService.listCompanies(any(AuthPrincipal.class)))
                     .thenReturn(List.of(res));
 
-            mockMvc.perform(get("/api/platform/companies"))
+            mockMvc.perform(get("/platform/companies"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$[0].id").value(10L))
                     .andExpect(jsonPath("$[0].name").value("Acme SRL"))
@@ -134,7 +134,7 @@ class CompanyControllerTests {
             when(companyService.listCompanies(any(AuthPrincipal.class)))
                     .thenReturn(List.of());
 
-            mockMvc.perform(get("/api/platform/companies"))
+            mockMvc.perform(get("/platform/companies"))
                     .andExpect(status().isNoContent());
         }
     }
@@ -148,7 +148,7 @@ class CompanyControllerTests {
             when(companyService.getCompany(eq(10L), any(AuthPrincipal.class)))
                     .thenReturn(Optional.of(res));
 
-            mockMvc.perform(get("/api/platform/companies/10"))
+            mockMvc.perform(get("/platform/companies/10"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(10L))
                     .andExpect(jsonPath("$.name").value("Acme SRL"))
@@ -161,7 +161,7 @@ class CompanyControllerTests {
             when(companyService.getCompany(eq(10L), any(AuthPrincipal.class)))
                     .thenReturn(Optional.empty());
 
-            mockMvc.perform(get("/api/platform/companies/10"))
+            mockMvc.perform(get("/platform/companies/10"))
                     .andExpect(status().isNotFound());
         }
     }
@@ -176,7 +176,7 @@ class CompanyControllerTests {
             when(companyService.createCompanyManager(eq(10L), any(CreateCompanyManagerRequest.class), any(AuthPrincipal.class)))
                     .thenReturn(Optional.of(res));
 
-            mockMvc.perform(post("/api/platform/companies/10/managers")
+            mockMvc.perform(post("/platform/companies/10/managers")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isCreated())
@@ -193,7 +193,7 @@ class CompanyControllerTests {
             when(companyService.createCompanyManager(eq(10L), any(CreateCompanyManagerRequest.class), any(AuthPrincipal.class)))
                     .thenReturn(Optional.empty());
 
-            mockMvc.perform(post("/api/platform/companies/10/managers")
+            mockMvc.perform(post("/platform/companies/10/managers")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isNotFound());
