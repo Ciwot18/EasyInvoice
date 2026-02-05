@@ -9,28 +9,115 @@ import java.util.List;
 import static com.kernith.easyinvoice.helper.Utils.esc;
 import static com.kernith.easyinvoice.helper.Utils.nvl;
 
+/**
+ * Builds the HTML used to render invoices and quotes as PDF documents.
+ */
 public final class PdfHtmlBuilder {
 
     private PdfDocumentView doc;
 
     private String companyAddress = "";
     private String customerAddress = "";
+    private boolean includeHeader = true;
+    private boolean includeCustomer = true;
+    private boolean includeItems = true;
+    private boolean includeTotals = true;
+    private boolean includeNotes = true;
 
+    /**
+     * Sets the document view model used for rendering.
+     *
+     * @param doc view model for the PDF
+     * @return builder instance
+     */
     public PdfHtmlBuilder document(PdfDocumentView doc) {
         this.doc = doc;
         return this;
     }
 
+    /**
+     * Sets the company address block (optional).
+     *
+     * @param companyAddress company address
+     * @return builder instance
+     */
     public PdfHtmlBuilder companyAddress(String companyAddress) {
         this.companyAddress = nvl(companyAddress);
         return this;
     }
 
+    /**
+     * Sets the customer address block (optional).
+     *
+     * @param customerAddress customer address
+     * @return builder instance
+     */
     public PdfHtmlBuilder customerAddress(String customerAddress) {
         this.customerAddress = nvl(customerAddress);
         return this;
     }
 
+    /**
+     * Includes or excludes the header section.
+     *
+     * @param enabled whether to include the header section
+     * @return builder instance
+     */
+    public PdfHtmlBuilder withHeader(boolean enabled) {
+        this.includeHeader = enabled;
+        return this;
+    }
+
+    /**
+     * Includes or excludes the customer section.
+     *
+     * @param enabled whether to include the customer section
+     * @return builder instance
+     */
+    public PdfHtmlBuilder withCustomer(boolean enabled) {
+        this.includeCustomer = enabled;
+        return this;
+    }
+
+    /**
+     * Includes or excludes the items section.
+     *
+     * @param enabled whether to include the items section
+     * @return builder instance
+     */
+    public PdfHtmlBuilder withItems(boolean enabled) {
+        this.includeItems = enabled;
+        return this;
+    }
+
+    /**
+     * Includes or excludes the totals section.
+     *
+     * @param enabled whether to include the totals section
+     * @return builder instance
+     */
+    public PdfHtmlBuilder withTotals(boolean enabled) {
+        this.includeTotals = enabled;
+        return this;
+    }
+
+    /**
+     * Includes or excludes the notes section.
+     *
+     * @param enabled whether to include the notes section
+     * @return builder instance
+     */
+    public PdfHtmlBuilder withNotes(boolean enabled) {
+        this.includeNotes = enabled;
+        return this;
+    }
+
+    /**
+     * Builds the final HTML page with styles and sections.
+     *
+     * @return complete HTML page
+     * @throws IllegalStateException if the document is missing
+     */
     public String build() {
         if (doc == null) throw new IllegalStateException("document is required");
 
@@ -50,11 +137,11 @@ public final class PdfHtmlBuilder {
             </html>
             """.formatted(
                 css(),
-                headerSection(),
-                customerSection(),
-                itemsSection(),
-                totalsSection(),
-                notesSection()
+                includeHeader ? headerSection() : "",
+                includeCustomer ? customerSection() : "",
+                includeItems ? itemsSection() : "",
+                includeTotals ? totalsSection() : "",
+                includeNotes ? notesSection() : ""
         );
     }
 
