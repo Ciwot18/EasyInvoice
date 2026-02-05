@@ -9,6 +9,9 @@ public interface PdfDocumentView {
 
     String companyName();
     String customerName();
+    String companyVAT();
+    String customerVAT();
+    String customerEmail();
 
     String currency();
     String notes();

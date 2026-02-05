@@ -7,6 +7,7 @@ import com.kernith.easyinvoice.data.model.QuoteItem;
 
 import java.util.List;
 
+import static com.kernith.easyinvoice.helper.Utils.money;
 import static com.kernith.easyinvoice.helper.Utils.nvl;
 
 public class QuotePdfAdapter implements PdfDocumentView {
@@ -36,6 +37,21 @@ public class QuotePdfAdapter implements PdfDocumentView {
     public String dueDateLabel() {
         return quote.getValidUntil() == null ? "" : String.valueOf(quote.getValidUntil());
     }
+    public String companyVAT() { return quote.getCompany().getVatNumber(); }
+    @Override
+    public String customerVAT() { return quote.getCustomer().getVatNumber(); }
+    @Override
+    public String customerEmail() {
+        String email = quote.getCustomer().getEmail();
+        String pec = quote.getCustomer().getPec();
+        if (!email.isBlank()) {
+            return email;
+        }
+        if (!pec.isBlank()) {
+            return pec;
+        }
+        return "";
+    }
     @Override
     public String companyName() { return company.getName(); }
     @Override
@@ -45,11 +61,11 @@ public class QuotePdfAdapter implements PdfDocumentView {
     @Override
     public String notes() { return nvl(quote.getNotes()); }
     @Override
-    public String subtotalLabel() { return quote.getSubtotalAmount().toString() + " " + quote.getCurrency(); }
+    public String subtotalLabel() { return money(quote.getSubtotalAmount(), quote.getCurrency()); }
     @Override
-    public String taxLabel() { return quote.getTaxAmount().toString() + " " + quote.getCurrency(); }
+    public String taxLabel() { return money(quote.getTaxAmount(), quote.getCurrency()); }
     @Override
-    public String totalLabel() { return quote.getTotalAmount().toString() + " " + quote.getCurrency(); }
+    public String totalLabel() { return money(quote.getTotalAmount(), quote.getCurrency()); }
     @Override
     public List<? extends PdfLineView> lines() {
         String currency = quote.getCurrency();

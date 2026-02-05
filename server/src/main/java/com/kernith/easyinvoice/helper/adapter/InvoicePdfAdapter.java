@@ -34,7 +34,22 @@ public final class InvoicePdfAdapter implements PdfDocumentView {
     public String issueDateLabel() { return String.valueOf(invoice.getIssueDate()); }
     @Override
     public String dueDateLabel() { return invoice.getDueDate() == null ? "" : String.valueOf(invoice.getDueDate()); }
-
+    @Override
+    public String companyVAT() { return invoice.getCompany().getVatNumber(); }
+    @Override
+    public String customerVAT() { return invoice.getCustomer().getVatNumber(); }
+    @Override
+    public String customerEmail() {
+        String email = invoice.getCustomer().getEmail();
+        String pec = invoice.getCustomer().getPec();
+        if (!email.isBlank()) {
+            return email;
+        }
+        if (!pec.isBlank()) {
+            return pec;
+        }
+        return "";
+    }
     @Override
     public String companyName() { return company.getName(); }
     @Override
