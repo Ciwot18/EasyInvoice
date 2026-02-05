@@ -18,6 +18,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Platform admin endpoints for company management.
+ */
 @RestController
 public class CompanyController {
 
@@ -27,7 +30,15 @@ public class CompanyController {
         this.companyService = companyService;
     }
 
-    @PostMapping("/api/platform/companies")
+    /**
+     * Creates a new company.
+     *
+     * @param request company creation payload
+     * @param principal authenticated principal
+     * @return created company summary
+     * @throws org.springframework.web.server.ResponseStatusException if validation or authorization fails
+     */
+    @PostMapping("/platform/companies")
     public ResponseEntity<CompanySummaryResponse> createCompany(
             @Valid @RequestBody CreateCompanyRequest request,
             @CurrentUser AuthPrincipal principal
@@ -36,7 +47,14 @@ public class CompanyController {
         return ResponseEntity.status(HttpStatus.CREATED).body(company);
     }
 
-    @GetMapping("/api/platform/companies")
+    /**
+     * Lists all companies.
+     *
+     * @param principal authenticated principal
+     * @return list of company summaries or {@code 204 No Content} if empty
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
+    @GetMapping("/platform/companies")
     public ResponseEntity<List<CompanySummaryResponse>> listCompanies(@CurrentUser AuthPrincipal principal) {
         List<CompanySummaryResponse> companies = companyService.listCompanies(principal);
         if (companies.isEmpty()) {
@@ -45,7 +63,15 @@ public class CompanyController {
         return ResponseEntity.ok(companies);
     }
 
-    @GetMapping("/api/platform/companies/{companyId}")
+    /**
+     * Returns company details by id.
+     *
+     * @param companyId company identifier
+     * @param principal authenticated principal
+     * @return company details or {@code 404 Not Found} if missing
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
+    @GetMapping("/platform/companies/{companyId}")
     public ResponseEntity<CompanyDetailResponse> getCompany(
             @PathVariable("companyId") Long companyId,
             @CurrentUser AuthPrincipal principal
@@ -55,7 +81,16 @@ public class CompanyController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/api/platform/companies/{companyId}/managers")
+    /**
+     * Creates a company manager for a given company.
+     *
+     * @param companyId company identifier
+     * @param request manager creation payload
+     * @param principal authenticated principal
+     * @return created manager summary or {@code 404 Not Found} if company missing
+     * @throws org.springframework.web.server.ResponseStatusException if validation or authorization fails
+     */
+    @PostMapping("/platform/companies/{companyId}/managers")
     public ResponseEntity<UserSummary> createCompanyManager(
             @PathVariable("companyId") Long companyId,
             @Valid @RequestBody CreateCompanyManagerRequest request,

@@ -20,6 +20,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Invoice item endpoints for managing items within an invoice.
+ */
 @RestController
 public class InvoiceItemController {
 
@@ -29,6 +32,15 @@ public class InvoiceItemController {
         this.invoiceItemService = invoiceItemService;
     }
 
+    /**
+     * Adds an item to an invoice.
+     *
+     * @param invoiceId invoice identifier
+     * @param request item creation payload
+     * @param principal authenticated principal
+     * @return created item response
+     * @throws org.springframework.web.server.ResponseStatusException if validation or authorization fails
+     */
     @PostMapping("/invoices/{invoiceId}/items")
     public ResponseEntity<InvoiceItemResponse> addInvoiceItem(
             @PathVariable("invoiceId") Long invoiceId,
@@ -38,6 +50,14 @@ public class InvoiceItemController {
         return ResponseEntity.ok(InvoiceItemResponse.from(invoiceItemService.addInvoiceItem(invoiceId, request, principal)));
     }
 
+    /**
+     * Lists all items for an invoice.
+     *
+     * @param invoiceId invoice identifier
+     * @param principal authenticated principal
+     * @return list of items or {@code 204 No Content} if empty
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @GetMapping("/invoices/{invoiceId}/items")
     public ResponseEntity<List<InvoiceItemResponse>> listInvoiceItems(
             @PathVariable("invoiceId") Long invoiceId,
@@ -50,6 +70,16 @@ public class InvoiceItemController {
         return ResponseEntity.ok(items.stream().map(InvoiceItemResponse::from).toList());
     }
 
+    /**
+     * Updates an existing invoice item.
+     *
+     * @param invoiceId invoice identifier
+     * @param itemId item identifier
+     * @param request update payload
+     * @param principal authenticated principal
+     * @return updated item response
+     * @throws org.springframework.web.server.ResponseStatusException if validation or authorization fails
+     */
     @PatchMapping("/invoices/{invoiceId}/items/{itemId}")
     public ResponseEntity<InvoiceItemResponse> updateInvoiceItem(
             @PathVariable("invoiceId") Long invoiceId,
@@ -60,6 +90,15 @@ public class InvoiceItemController {
         return ResponseEntity.ok(InvoiceItemResponse.from(invoiceItemService.updateInvoiceItem(invoiceId, itemId, request, principal)));
     }
 
+    /**
+     * Deletes an item from an invoice.
+     *
+     * @param invoiceId invoice identifier
+     * @param itemId item identifier
+     * @param principal authenticated principal
+     * @return {@code 204 No Content} on success or {@code 400 Bad Request} on failure
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @DeleteMapping("/invoices/{invoiceId}/items/{itemId}")
     public ResponseEntity<Void> deleteInvoiceItem(
             @PathVariable("invoiceId") Long invoiceId,

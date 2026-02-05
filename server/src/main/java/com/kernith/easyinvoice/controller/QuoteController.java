@@ -24,6 +24,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Quote endpoints for CRUD operations, status transitions, and PDF rendering.
+ */
 @RestController
 public class QuoteController {
 
@@ -37,6 +40,14 @@ public class QuoteController {
         this.pdfService = pdfService;
     }
 
+    /**
+     * Creates a new quote.
+     *
+     * @param request quote creation payload
+     * @param principal authenticated principal
+     * @return created quote details
+     * @throws org.springframework.web.server.ResponseStatusException if validation or authorization fails
+     */
     @PostMapping("/quotes")
     public ResponseEntity<QuoteDetailResponse> createQuote(
             @Valid @RequestBody CreateQuoteRequest request,
@@ -45,6 +56,17 @@ public class QuoteController {
         return ResponseEntity.ok(QuoteDetailResponse.from(quoteService.createQuote(request, principal)));
     }
 
+    /**
+     * Lists quotes with pagination and optional search.
+     *
+     * @param page page index (0-based)
+     * @param size page size
+     * @param sort sort spec (field,dir)
+     * @param q optional search query
+     * @param principal authenticated principal
+     * @return paged quote summaries or {@code 204 No Content} if empty
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @GetMapping("/quotes")
     public ResponseEntity<Page<QuoteSummaryResponse>> listQuotes(
             @RequestParam(name = "page", defaultValue = "0") int page,
@@ -60,6 +82,14 @@ public class QuoteController {
         return ResponseEntity.ok(quotes.map(QuoteSummaryResponse::from));
     }
 
+    /**
+     * Returns a single quote by id.
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return quote details or {@code 400 Bad Request} if not found
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @GetMapping("/quotes/{quoteId}")
     public ResponseEntity<QuoteDetailResponse> getQuote(
             @PathVariable("quoteId") Long quoteId,
@@ -72,6 +102,14 @@ public class QuoteController {
         return ResponseEntity.ok(QuoteDetailResponse.from(optionalQuote.get()));
     }
 
+    /**
+     * Returns an inline PDF rendering for the quote.
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return PDF bytes with inline disposition
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @GetMapping("/quotes/{quoteId}/pdf")
     public ResponseEntity<byte[]> getQuotePdf(
             @PathVariable("quoteId") Long quoteId,
@@ -85,6 +123,14 @@ public class QuoteController {
                 .body(pdf);
     }
 
+    /**
+     * Returns a downloadable PDF rendering for the quote.
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return PDF bytes with attachment disposition
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @GetMapping("/quotes/{quoteId}/pdf-download")
     public ResponseEntity<byte[]> getQuoteDownloadPdf(
             @PathVariable("quoteId") Long quoteId,
@@ -98,6 +144,15 @@ public class QuoteController {
                 .body(pdf);
     }
 
+    /**
+     * Updates editable fields of a quote.
+     *
+     * @param quoteId quote identifier
+     * @param request update payload
+     * @param principal authenticated principal
+     * @return updated quote details
+     * @throws org.springframework.web.server.ResponseStatusException if validation or authorization fails
+     */
     @PatchMapping("/quotes/{quoteId}")
     public ResponseEntity<QuoteDetailResponse> updateQuote(
             @PathVariable("quoteId") Long quoteId,
@@ -107,6 +162,14 @@ public class QuoteController {
         return ResponseEntity.ok(QuoteDetailResponse.from(quoteService.updateQuote(quoteId, request, principal)));
     }
 
+    /**
+     * Archives a quote.
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return {@code 204 No Content} on success or {@code 400 Bad Request} on failure
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @PostMapping("/quotes/{quoteId}/archive")
     public ResponseEntity<Void> archiveQuote(
             @PathVariable("quoteId") Long quoteId,
@@ -118,6 +181,14 @@ public class QuoteController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Marks a quote as sent.
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return {@code 204 No Content} on success or {@code 400 Bad Request} on failure
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @PostMapping("/quotes/{quoteId}/send")
     public ResponseEntity<Void> sendQuote(
             @PathVariable("quoteId") Long quoteId,
@@ -129,6 +200,14 @@ public class QuoteController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Marks a quote as accepted.
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return {@code 204 No Content} on success or {@code 400 Bad Request} on failure
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @PostMapping("/quotes/{quoteId}/accept")
     public ResponseEntity<Void> acceptQuote(
             @PathVariable("quoteId") Long quoteId,
@@ -140,6 +219,14 @@ public class QuoteController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Marks a quote as rejected.
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return {@code 204 No Content} on success or {@code 400 Bad Request} on failure
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @PostMapping("/quotes/{quoteId}/reject")
     public ResponseEntity<Void> rejectQuote(
             @PathVariable("quoteId") Long quoteId,
@@ -151,6 +238,14 @@ public class QuoteController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Converts a quote into an invoice.
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return created invoice details
+     * @throws org.springframework.web.server.ResponseStatusException if validation or authorization fails
+     */
     @PostMapping("/quotes/{quoteId}/convert")
     public ResponseEntity<InvoiceDetailResponse> convertQuote(
             @PathVariable("quoteId") Long quoteId,

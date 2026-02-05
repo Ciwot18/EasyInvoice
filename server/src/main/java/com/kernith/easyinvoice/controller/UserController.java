@@ -20,6 +20,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * User endpoints for company managers and back office users.
+ */
 @RestController
 public class UserController {
 
@@ -29,6 +32,14 @@ public class UserController {
 		this.userService = userService;
 	}
 
+	/**
+	 * Creates a back office user for the current company.
+	 *
+	 * @param request user creation payload
+	 * @param principal authenticated principal
+	 * @return created user summary or {@code 404 Not Found} if current user missing
+	 * @throws org.springframework.web.server.ResponseStatusException if validation or authorization fails
+	 */
 	@PostMapping("/manager/backoffice-users")
 	public ResponseEntity<UserSummary> createBackofficeUser(
 			@Valid @RequestBody CreateBackofficeUserRequest request,
@@ -42,6 +53,13 @@ public class UserController {
         }
 	}
 
+	/**
+	 * Lists users for the current company.
+	 *
+	 * @param principal authenticated principal
+	 * @return list of user summaries or {@code 204 No Content} if empty
+	 * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+	 */
 	@GetMapping("/manager/users")
 	public ResponseEntity<List<UserSummary>> listCompanyUsers(@CurrentUser AuthPrincipal principal) {
 		List<User> users = userService.listCompanyUsers(principal);
@@ -51,6 +69,14 @@ public class UserController {
 		return ResponseEntity.ok(users.stream().map(UserSummary::from).toList());
 	}
 
+	/**
+	 * Disables a user in the current company.
+	 *
+	 * @param userId target user identifier
+	 * @param principal authenticated principal
+	 * @return {@code 204 No Content} on success or {@code 404 Not Found} if missing
+	 * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+	 */
 	@PatchMapping("/manager/users/{userId}/disable")
 	public ResponseEntity<Void> disableUser(@PathVariable("userId") Long userId, @CurrentUser AuthPrincipal principal) {
 		if (userService.disableUser(userId, principal).isEmpty()) {
@@ -61,6 +87,13 @@ public class UserController {
 
 	// Back Office
 
+	/**
+	 * Returns the profile of the current back office user.
+	 *
+	 * @param principal authenticated principal
+	 * @return profile response or {@code 401 Unauthorized} if missing
+	 * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+	 */
 	@GetMapping("/backoffice/profile")
 	public ResponseEntity<ProfileResponse> getBackofficeProfile(@CurrentUser AuthPrincipal principal) {
         Optional<User> optionalUser = userService.getBackofficeProfile(principal);

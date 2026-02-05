@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
+/**
+ * Authentication endpoints for login and current user profile.
+ */
 @RestController
 @RequestMapping("auth")
 public class AuthController {
@@ -26,11 +29,24 @@ public class AuthController {
         this.userService = userService;
     }
 
+    /**
+     * Authenticates a user and returns a JWT token response.
+     *
+     * @param req login credentials
+     * @return login response with token and user info
+     * @throws RuntimeException if credentials are invalid or user is disabled
+     */
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest req) {
         return ResponseEntity.ok(authService.login(req));
     }
 
+    /**
+     * Returns the authenticated user profile.
+     *
+     * @param principal authenticated principal resolved from the request
+     * @return profile response or {@code 401 Unauthorized} if missing
+     */
     @GetMapping("/me")
     public ResponseEntity<ProfileResponse> me(@CurrentUser AuthPrincipal principal) {
         Optional<User> optionalUser = userService.getCurrentUser(principal);

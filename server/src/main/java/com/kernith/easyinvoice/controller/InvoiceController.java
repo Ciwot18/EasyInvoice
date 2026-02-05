@@ -26,6 +26,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Invoice endpoints for CRUD operations, status transitions, and PDF retrieval.
+ */
 @RestController
 public class InvoiceController {
 
@@ -39,6 +42,14 @@ public class InvoiceController {
         this.invoicePdfService = invoicePdfService;
     }
 
+    /**
+     * Creates a new invoice.
+     *
+     * @param request invoice creation payload
+     * @param principal authenticated principal
+     * @return created invoice details
+     * @throws org.springframework.web.server.ResponseStatusException if validation or authorization fails
+     */
     @PostMapping("/invoices")
     public ResponseEntity<InvoiceDetailResponse> createInvoice(
             @Valid @RequestBody CreateInvoiceRequest request,
@@ -47,6 +58,17 @@ public class InvoiceController {
         return ResponseEntity.ok(InvoiceDetailResponse.from(invoiceService.createInvoice(request, principal)));
     }
 
+    /**
+     * Lists invoices with pagination and optional search.
+     *
+     * @param page page index (0-based)
+     * @param size page size
+     * @param sort sort spec (field,dir)
+     * @param q optional search query
+     * @param principal authenticated principal
+     * @return paged invoice summaries or {@code 204 No Content} if empty
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @GetMapping("/invoices")
     public ResponseEntity<Page<InvoiceSummaryResponse>> listInvoices(
             @RequestParam(name = "page", defaultValue = "0") int page,
@@ -62,6 +84,14 @@ public class InvoiceController {
         return ResponseEntity.ok(invoices.map(InvoiceSummaryResponse::from));
     }
 
+    /**
+     * Returns a single invoice by id.
+     *
+     * @param invoiceId invoice identifier
+     * @param principal authenticated principal
+     * @return invoice details or {@code 400 Bad Request} if not found
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @GetMapping("/invoices/{invoiceId}")
     public ResponseEntity<InvoiceDetailResponse> getInvoice(
             @PathVariable("invoiceId") Long invoiceId,
@@ -74,6 +104,14 @@ public class InvoiceController {
         return ResponseEntity.ok(InvoiceDetailResponse.from(optionalInvoice.get()));
     }
 
+    /**
+     * Returns an inline PDF rendering for the invoice.
+     *
+     * @param invoiceId invoice identifier
+     * @param principal authenticated principal
+     * @return PDF bytes with inline disposition
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @GetMapping("/invoices/{invoiceId}/pdf")
     public ResponseEntity<byte[]> getinvoicePdf(
             @PathVariable("invoiceId") Long invoiceId,
@@ -87,6 +125,14 @@ public class InvoiceController {
                 .body(pdf);
     }
 
+    /**
+     * Returns a downloadable PDF rendering for the invoice.
+     *
+     * @param invoiceId invoice identifier
+     * @param principal authenticated principal
+     * @return PDF bytes with attachment disposition
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @GetMapping("/invoices/{invoiceId}/pdf-download")
     public ResponseEntity<byte[]> getinvoiceDownloadPdf(
             @PathVariable("invoiceId") Long invoiceId,
@@ -100,6 +146,14 @@ public class InvoiceController {
                 .body(pdf);
     }
 
+    /**
+     * Lists stored PDF versions for an invoice.
+     *
+     * @param invoiceId invoice identifier
+     * @param principal authenticated principal
+     * @return list of stored PDF metadata
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @GetMapping("/invoices/{invoiceId}/pdfs")
     public ResponseEntity<List<InvoicePdfDto>> listPdfs(
             @PathVariable Long invoiceId,
@@ -109,6 +163,15 @@ public class InvoiceController {
         return ResponseEntity.ok(pdfs);
     }
 
+    /**
+     * Downloads a previously stored invoice PDF.
+     *
+     * @param invoiceId invoice identifier
+     * @param saveId stored PDF identifier
+     * @param principal authenticated principal
+     * @return PDF resource as attachment
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @GetMapping("/invoices/{invoiceId}/pdfs/{saveId}")
     public ResponseEntity<Resource> downloadPdf(
             @PathVariable Long invoiceId,
@@ -119,11 +182,19 @@ public class InvoiceController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + pdf.fileName() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + pdf.fileName() + "\"")
                 .body(pdf.resource());
     }
 
+    /**
+     * Updates editable fields of an invoice.
+     *
+     * @param invoiceId invoice identifier
+     * @param request update payload
+     * @param principal authenticated principal
+     * @return updated invoice details
+     * @throws org.springframework.web.server.ResponseStatusException if validation or authorization fails
+     */
     @PatchMapping("/invoices/{invoiceId}")
     public ResponseEntity<InvoiceDetailResponse> updateInvoice(
             @PathVariable("invoiceId") Long invoiceId,
@@ -133,6 +204,14 @@ public class InvoiceController {
         return ResponseEntity.ok(InvoiceDetailResponse.from(invoiceService.updateInvoice(invoiceId, request, principal)));
     }
 
+    /**
+     * Issues an invoice and stores the generated PDF.
+     *
+     * @param invoiceId invoice identifier
+     * @param principal authenticated principal
+     * @return saved PDF archive metadata
+     * @throws org.springframework.web.server.ResponseStatusException if validation or authorization fails
+     */
     @PostMapping("/invoices/{invoiceId}/issue")
     public ResponseEntity<InvoicePdfArchiveSaveResponse> issueInvoice(
             @PathVariable("invoiceId") Long invoiceId,
@@ -142,6 +221,14 @@ public class InvoiceController {
         return ResponseEntity.ok(InvoicePdfArchiveSaveResponse.from(invoicePdfArchive));
     }
 
+    /**
+     * Marks an invoice as paid.
+     *
+     * @param invoiceId invoice identifier
+     * @param principal authenticated principal
+     * @return {@code 204 No Content} on success or {@code 400 Bad Request} on failure
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @PostMapping("/invoices/{invoiceId}/pay")
     public ResponseEntity<Void> payInvoice(
             @PathVariable("invoiceId") Long invoiceId,
@@ -153,6 +240,14 @@ public class InvoiceController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Marks an invoice as overdue.
+     *
+     * @param invoiceId invoice identifier
+     * @param principal authenticated principal
+     * @return {@code 204 No Content} on success or {@code 400 Bad Request} on failure
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @PostMapping("/invoices/{invoiceId}/overdue")
     public ResponseEntity<Void> markInvoiceOverdue(
             @PathVariable("invoiceId") Long invoiceId,

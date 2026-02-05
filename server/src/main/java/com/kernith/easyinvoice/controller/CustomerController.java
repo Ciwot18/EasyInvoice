@@ -25,6 +25,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Customer endpoints for CRUD operations and related quotes.
+ */
 @RestController
 public class CustomerController {
 
@@ -34,6 +37,14 @@ public class CustomerController {
         this.customerService = customerService;
     }
 
+    /**
+     * Creates a new customer.
+     *
+     * @param request customer creation payload
+     * @param principal authenticated principal
+     * @return created customer summary
+     * @throws org.springframework.web.server.ResponseStatusException if validation or authorization fails
+     */
     @PostMapping("/manager/customers")
     public ResponseEntity<CustomerSummaryResponse> createCustomer(
             @Valid @RequestBody CreateCustomerRequest request,
@@ -42,6 +53,14 @@ public class CustomerController {
         return ResponseEntity.ok(CustomerSummaryResponse.from(customerService.createCustomer(request, principal)));
     }
 
+    /**
+     * Returns a customer by id.
+     *
+     * @param customerId customer identifier
+     * @param principal authenticated principal
+     * @return customer details or {@code 404 Not Found} if missing
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @GetMapping("/manager/customers/{customerId}")
     public ResponseEntity<CustomerDetailResponse> getCustomer(
             @PathVariable("customerId") Long customerId,
@@ -55,6 +74,15 @@ public class CustomerController {
         }
     }
 
+    /**
+     * Updates editable fields of a customer.
+     *
+     * @param customerId customer identifier
+     * @param request update payload
+     * @param principal authenticated principal
+     * @return updated customer details
+     * @throws org.springframework.web.server.ResponseStatusException if validation or authorization fails
+     */
     @PatchMapping("/manager/customers/{customerId}")
     public ResponseEntity<CustomerDetailResponse> updateCustomer(
             @PathVariable("customerId") Long customerId,
@@ -64,6 +92,14 @@ public class CustomerController {
         return ResponseEntity.ok(CustomerDetailResponse.from(customerService.updateCustomer(customerId, request, principal)));
     }
 
+    /**
+     * Deletes (soft-deletes) a customer.
+     *
+     * @param customerId customer identifier
+     * @param principal authenticated principal
+     * @return {@code 204 No Content} on success or {@code 404 Not Found} if missing
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @DeleteMapping("/manager/customers/{customerId}")
     public ResponseEntity<Void> deleteCustomer(
             @PathVariable("customerId") Long customerId,
@@ -75,6 +111,17 @@ public class CustomerController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Lists customers with summary payloads when {@code type=summary}.
+     *
+     * @param page page index (0-based)
+     * @param size page size
+     * @param sort sort spec (field,dir)
+     * @param q optional search query
+     * @param principal authenticated principal
+     * @return paged customer summaries or {@code 204 No Content} if empty
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @GetMapping(value = "/manager/customers", params = "type=summary")
     public ResponseEntity<Page<CustomerSummaryResponse>> listCustomersSummary(
             @RequestParam(name = "page", defaultValue = "0") int page,
@@ -90,6 +137,17 @@ public class CustomerController {
         return ResponseEntity.ok(customers.map(CustomerSummaryResponse::from));
     }
 
+    /**
+     * Lists customers with detail payloads.
+     *
+     * @param page page index (0-based)
+     * @param size page size
+     * @param sort sort spec (field,dir)
+     * @param q optional search query
+     * @param principal authenticated principal
+     * @return paged customer details or {@code 204 No Content} if empty
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @GetMapping("/manager/customers")
     public ResponseEntity<Page<CustomerDetailResponse>> listCustomers(
             @RequestParam(name = "page", defaultValue = "0") int page,
@@ -105,6 +163,14 @@ public class CustomerController {
         return ResponseEntity.ok(customers.map(CustomerDetailResponse::from));
     }
 
+    /**
+     * Archives a customer.
+     *
+     * @param customerId customer identifier
+     * @param principal authenticated principal
+     * @return {@code 204 No Content} on success or {@code 404 Not Found} if missing
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @PostMapping("/manager/customers/{customerId}/archive")
     public ResponseEntity<Void> archiveCustomer(
             @PathVariable("customerId") Long customerId,
@@ -116,6 +182,14 @@ public class CustomerController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Restores an archived customer.
+     *
+     * @param customerId customer identifier
+     * @param principal authenticated principal
+     * @return {@code 204 No Content} on success or {@code 404 Not Found} if missing
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @PostMapping("/manager/customers/{customerId}/restore")
     public ResponseEntity<Void> restoreCustomer(
             @PathVariable("customerId") Long customerId,
@@ -127,6 +201,14 @@ public class CustomerController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Lists quotes related to a customer.
+     *
+     * @param customerId customer identifier
+     * @param principal authenticated principal
+     * @return list of quotes or {@code 204 No Content} if empty
+     * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+     */
     @GetMapping("/customer/{customerId}/quotes")
     public ResponseEntity<List<QuoteSummaryResponse>> listCustomerQuotes(
             @PathVariable("customerId") Long customerId,
