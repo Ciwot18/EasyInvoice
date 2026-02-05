@@ -39,3 +39,7 @@ backup:
 
 storage:
   root: "./storage"
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
