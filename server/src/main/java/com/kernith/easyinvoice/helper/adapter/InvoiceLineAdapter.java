@@ -4,10 +4,19 @@ import com.kernith.easyinvoice.data.model.InvoiceItem;
 
 import static com.kernith.easyinvoice.helper.Utils.*;
 
+/**
+ * Adapts {@link InvoiceItem} data to {@link PdfLineView} for invoice PDFs.
+ */
 public class InvoiceLineAdapter implements PdfLineView {
     private final InvoiceItem it;
     private final String currency;
 
+    /**
+     * Creates a line adapter for an invoice item.
+     *
+     * @param it invoice item
+     * @param currency currency code
+     */
     public InvoiceLineAdapter(InvoiceItem it, String currency) {
         this.it = it;
         this.currency = currency;

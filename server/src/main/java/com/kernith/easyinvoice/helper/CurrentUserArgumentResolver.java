@@ -10,15 +10,33 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
+/**
+ * Resolves {@link CurrentUser} parameters to the authenticated {@link AuthPrincipal}.
+ */
 @Component
 public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolver {
 
+    /**
+     * Supports parameters annotated with {@link CurrentUser} and assignable to {@link AuthPrincipal}.
+     *
+     * @param parameter method parameter to check
+     * @return {@code true} if supported
+     */
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
         return parameter.hasParameterAnnotation(CurrentUser.class)
                 && AuthPrincipal.class.isAssignableFrom(parameter.getParameterType());
     }
 
+    /**
+     * Returns the authenticated principal or {@code null} if not available.
+     *
+     * @param parameter method parameter
+     * @param mavContainer model/view container
+     * @param webRequest current request
+     * @param binderFactory binder factory
+     * @return resolved principal or {@code null}
+     */
     @Override
     public Object resolveArgument(
             MethodParameter parameter,

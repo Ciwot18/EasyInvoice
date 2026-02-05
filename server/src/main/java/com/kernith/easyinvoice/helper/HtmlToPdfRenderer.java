@@ -4,10 +4,19 @@ import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 
 import java.io.ByteArrayOutputStream;
 
+/**
+ * Renders HTML content into a PDF document using OpenHTMLToPDF.
+ */
 public final class HtmlToPdfRenderer {
 
     private HtmlToPdfRenderer() {}
 
+    /**
+     * Generates a PDF from the given HTML string.
+     *
+     * @param html HTML markup to render
+     * @return PDF bytes
+     */
     public static byte[] render(String html) {
         try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
 
@@ -23,6 +32,12 @@ public final class HtmlToPdfRenderer {
         }
     }
 
+    /**
+     * Removes a UTF-8 BOM if present at the start of the string.
+     *
+     * @param s input string
+     * @return string without BOM
+     */
     private static String stripBom(String s) {
         if (s != null && !s.isEmpty() && s.charAt(0) == '\uFEFF') {
             return s.substring(1);

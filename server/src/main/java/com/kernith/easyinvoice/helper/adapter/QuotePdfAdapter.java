@@ -10,12 +10,23 @@ import java.util.List;
 import static com.kernith.easyinvoice.helper.Utils.money;
 import static com.kernith.easyinvoice.helper.Utils.nvl;
 
+/**
+ * Adapts {@link Quote} data to {@link PdfDocumentView} for PDF rendering.
+ */
 public class QuotePdfAdapter implements PdfDocumentView {
     private final Quote quote;
     private final List<QuoteItem> items;
     private final Company company;
     private final Customer customer;
 
+    /**
+     * Creates a PDF adapter for a quote and its related entities.
+     *
+     * @param quote quote entity
+     * @param items quote items
+     * @param company company entity
+     * @param customer customer entity
+     */
     public QuotePdfAdapter(Quote quote, List<QuoteItem> items, Company company, Customer customer) {
         this.quote = quote;
         this.items = items;
@@ -40,6 +51,9 @@ public class QuotePdfAdapter implements PdfDocumentView {
     public String companyVAT() { return quote.getCompany().getVatNumber(); }
     @Override
     public String customerVAT() { return quote.getCustomer().getVatNumber(); }
+    /**
+     * Returns email if present, otherwise PEC, otherwise empty.
+     */
     @Override
     public String customerEmail() {
         String email = nvl(quote.getCustomer().getEmail());

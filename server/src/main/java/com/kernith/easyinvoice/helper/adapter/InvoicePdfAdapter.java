@@ -10,6 +10,9 @@ import java.util.List;
 import static com.kernith.easyinvoice.helper.Utils.money;
 import static com.kernith.easyinvoice.helper.Utils.nvl;
 
+/**
+ * Adapts {@link Invoice} data to {@link PdfDocumentView} for PDF rendering.
+ */
 public final class InvoicePdfAdapter implements PdfDocumentView {
 
     private final Invoice invoice;
@@ -17,6 +20,14 @@ public final class InvoicePdfAdapter implements PdfDocumentView {
     private final Company company;
     private final Customer customer;
 
+    /**
+     * Creates a PDF adapter for an invoice and its related entities.
+     *
+     * @param invoice invoice entity
+     * @param items invoice items
+     * @param company company entity
+     * @param customer customer entity
+     */
     public InvoicePdfAdapter(Invoice invoice, List<InvoiceItem> items, Company company, Customer customer) {
         this.invoice = invoice;
         this.items = items;
@@ -38,6 +49,9 @@ public final class InvoicePdfAdapter implements PdfDocumentView {
     public String companyVAT() { return invoice.getCompany().getVatNumber(); }
     @Override
     public String customerVAT() { return invoice.getCustomer().getVatNumber(); }
+    /**
+     * Returns email if present, otherwise PEC, otherwise empty.
+     */
     @Override
     public String customerEmail() {
         String email = nvl(invoice.getCustomer().getEmail());
