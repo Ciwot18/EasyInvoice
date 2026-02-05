@@ -32,3 +32,10 @@ logging:
   level:
     org.springframework.security: DEBUG
     org.flywaydb: DEBUG
+
+backup:
+  cron: "0 0 2 ? * SUN"
+  zone: "Europe/Rome"
+
+storage:
+  root: "./storage"
