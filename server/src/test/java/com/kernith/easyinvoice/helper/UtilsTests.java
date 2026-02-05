@@ -24,6 +24,12 @@ class UtilsTests {
     }
 
     @Test
+    void requireRolesThrowsWhenRoleIsNull() {
+        AuthPrincipal principal = new AuthPrincipal(1L, 2L, null, List.of());
+        assertThrows(ResponseStatusException.class, () -> Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER)));
+    }
+
+    @Test
     void requireRolesThrowsWhenInvalidRole() {
         AuthPrincipal principal = new AuthPrincipal(1L, 2L, "NOPE", List.of());
         assertThrows(ResponseStatusException.class, () -> Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER)));
@@ -46,5 +52,11 @@ class UtilsTests {
         assertEquals("€ 0.00", Utils.money(null, "EUR"));
         assertEquals("EURX 2.00", Utils.money(new BigDecimal("2"), "EURX"));
         assertEquals("€ 1.2345", Utils.money4(new BigDecimal("1.2345"), "EUR"));
+    }
+
+    @Test
+    void escHandlesNullAndSpecialChars() {
+        assertEquals("", Utils.esc(null));
+        assertEquals("&lt;&gt;&amp;&quot;&#39;", Utils.esc("<>&\"'"));
     }
 }

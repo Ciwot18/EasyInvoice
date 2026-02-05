@@ -4,9 +4,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -27,6 +29,9 @@ class QuoteTests {
         assertNotNull(quote.getItems());
         assertTrue(quote.getItems().isEmpty());
         assertEquals(0, BigDecimal.ZERO.compareTo(quote.getTotalAmount()));
+        assertNull(quote.getId());
+        assertNull(quote.getCreatedAt());
+        assertNull(quote.getUpdatedAt());
 
         quote.setQuoteYear(2025);
         quote.setQuoteNumber(77);
@@ -101,6 +106,47 @@ class QuoteTests {
         assertAmount(BigDecimal.ZERO, quote.getSubtotalAmount());
         assertAmount(BigDecimal.ZERO, quote.getTaxAmount());
         assertAmount(BigDecimal.ZERO, quote.getTotalAmount());
+    }
+
+    @Test
+    void quoteStateMethodsUseFactoryAndUpdateState() {
+        Company company = new Company();
+        Customer customer = new Customer(company);
+        Quote quote = new Quote(company, customer);
+
+        quote.reject();
+        assertEquals(QuoteStatus.REJECTED, quote.getStatus());
+
+        quote.setStatus(QuoteStatus.SENT);
+        assertEquals(QuoteStatus.SENT, quote.getStatus());
+        quote.expire();
+        assertEquals(QuoteStatus.EXPIRED, quote.getStatus());
+
+        quote.setStatus(QuoteStatus.DRAFT);
+        quote.send();
+        assertEquals(QuoteStatus.SENT, quote.getStatus());
+
+        quote.accept();
+        assertEquals(QuoteStatus.ACCEPTED, quote.getStatus());
+
+        quote.convert();
+        assertEquals(QuoteStatus.CONVERTED, quote.getStatus());
+
+        quote.archive();
+        assertEquals(QuoteStatus.ARCHIVED, quote.getStatus());
+    }
+
+    @Test
+    void initStateUsesCurrentStatusWhenAlreadySet() {
+        Company company = new Company();
+        Customer customer = new Customer(company);
+        Quote quote = new Quote(company, customer);
+        quote.setStatus(QuoteStatus.SENT);
+
+        ReflectionTestUtils.invokeMethod(quote, "initState");
+        quote.accept();
+
+        assertEquals(QuoteStatus.ACCEPTED, quote.getStatus());
     }
 
     private void assertAmount(BigDecimal expected, BigDecimal actual) {

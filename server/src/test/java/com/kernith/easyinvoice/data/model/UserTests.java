@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class UserTests {
@@ -16,6 +17,7 @@ class UserTests {
 
         assertEquals(company, user.getCompany());
         assertTrue(user.isEnabled());
+        assertNull(user.getId());
 
         user.setEmail("user@acme.test");
         user.setPasswordHash("hash");
@@ -26,6 +28,7 @@ class UserTests {
         assertEquals("hash", user.getPasswordHash());
         assertEquals(UserRole.BACK_OFFICE, user.getRole());
         assertFalse(user.isEnabled());
+        assertNull(user.getCreatedAt());
     }
 
     @Test

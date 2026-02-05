@@ -4,8 +4,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -27,6 +29,9 @@ class InvoiceTests {
         assertNotNull(invoice.getItems());
         assertTrue(invoice.getItems().isEmpty());
         assertAmount(BigDecimal.ZERO, invoice.getTotalAmount());
+        assertNull(invoice.getId());
+        assertNull(invoice.getCreatedAt());
+        assertNull(invoice.getUpdatedAt());
 
         invoice.setInvoiceYear(2025);
         invoice.setInvoiceNumber(77);
@@ -95,6 +100,14 @@ class InvoiceTests {
     }
 
     @Test
+    void constructorFromNullQuoteLeavesDefaults() {
+        Invoice invoice = new Invoice((Quote) null);
+        assertNull(invoice.getCompany());
+        assertNull(invoice.getCustomer());
+        assertNull(invoice.getSourceQuote());
+    }
+
+    @Test
     void recalculateTotalsFromItemsAggregatesValuesAndSkipsNulls() {
         Company company = new Company();
         Customer customer = new Customer(company);
@@ -148,6 +161,43 @@ class InvoiceTests {
         assertAmount(BigDecimal.ZERO, invoice.getSubtotalAmount());
         assertAmount(BigDecimal.ZERO, invoice.getTaxAmount());
         assertAmount(BigDecimal.ZERO, invoice.getTotalAmount());
+    }
+
+    @Test
+    void invoiceStateMethodsUseFactoryAndUpdateState() {
+        Company company = new Company();
+        Customer customer = new Customer(company);
+        Invoice invoice = new Invoice(company, customer);
+
+        invoice.draft();
+        assertEquals(InvoiceStatus.DRAFT, invoice.getStatus());
+
+        invoice.issue();
+        assertEquals(InvoiceStatus.ISSUED, invoice.getStatus());
+
+        invoice.overdue();
+        assertEquals(InvoiceStatus.OVERDUE, invoice.getStatus());
+
+        invoice.pay();
+        assertEquals(InvoiceStatus.PAID, invoice.getStatus());
+
+        invoice.setStatus(InvoiceStatus.DRAFT);
+        assertEquals(InvoiceStatus.DRAFT, invoice.getStatus());
+        invoice.archive();
+        assertEquals(InvoiceStatus.ARCHIVED, invoice.getStatus());
+    }
+
+    @Test
+    void initStateUsesCurrentStatusWhenAlreadySet() {
+        Company company = new Company();
+        Customer customer = new Customer(company);
+        Invoice invoice = new Invoice(company, customer);
+        invoice.setStatus(InvoiceStatus.ISSUED);
+
+        ReflectionTestUtils.invokeMethod(invoice, "initState");
+        invoice.pay();
+
+        assertEquals(InvoiceStatus.PAID, invoice.getStatus());
     }
 
     private void assertAmount(BigDecimal expected, BigDecimal actual) {

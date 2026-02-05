@@ -74,8 +74,12 @@ class PdfAdapterTests {
     void quotePdfAdapterMapsFields() {
         Company company = new Company();
         company.setName("Acme");
+        company.setVatNumber("IT222");
         Customer customer = new Customer(company);
         customer.setLegalName("Acme Spa");
+        customer.setVatNumber("IT123");
+        customer.setEmail("");
+        customer.setPec("pec@acme.test");
 
         Quote quote = new Quote(company, customer);
         quote.setQuoteYear(2025);
@@ -107,6 +111,9 @@ class PdfAdapterTests {
         assertEquals("2025-02-05", adapter.dueDateLabel());
         assertEquals("Acme", adapter.companyName());
         assertEquals("Acme Spa", adapter.customerName());
+        assertEquals("IT222", adapter.companyVAT());
+        assertEquals("IT123", adapter.customerVAT());
+        assertEquals("pec@acme.test", adapter.customerEmail());
         assertEquals("EUR", adapter.currency());
         assertEquals("", adapter.notes());
         assertTrue(adapter.subtotalLabel().startsWith("€ "));
@@ -116,11 +123,29 @@ class PdfAdapterTests {
     }
 
     @Test
+    void quotePdfAdapterReturnsEmptyCustomerEmailWhenMissing() {
+        Company company = new Company();
+        Customer customer = new Customer(company);
+        customer.setEmail("");
+        customer.setPec("");
+        Quote quote = new Quote(company, customer);
+        quote.setCurrency("EUR");
+
+        QuotePdfAdapter adapter = new QuotePdfAdapter(quote, List.of(), company, customer);
+
+        assertEquals("", adapter.customerEmail());
+    }
+
+    @Test
     void invoicePdfAdapterMapsFields() {
         Company company = new Company();
         company.setName("Acme");
+        company.setVatNumber("IT222");
         Customer customer = new Customer(company);
         customer.setLegalName("Acme Spa");
+        customer.setVatNumber("IT123");
+        customer.setEmail("");
+        customer.setPec("pec@acme.test");
 
         Invoice invoice = new Invoice(company, customer);
         invoice.setInvoiceYear(2025);
@@ -151,11 +176,28 @@ class PdfAdapterTests {
         assertEquals("2025-02-10", adapter.dueDateLabel());
         assertEquals("Acme", adapter.companyName());
         assertEquals("Acme Spa", adapter.customerName());
+        assertEquals("IT222", adapter.companyVAT());
+        assertEquals("IT123", adapter.customerVAT());
+        assertEquals("pec@acme.test", adapter.customerEmail());
         assertEquals("EUR", adapter.currency());
         assertEquals("Note", adapter.notes());
         assertEquals("€ 0.00", adapter.subtotalLabel());
         assertEquals("€ 0.00", adapter.taxLabel());
         assertEquals("€ 0.00", adapter.totalLabel());
         assertFalse(adapter.lines().isEmpty());
+    }
+
+    @Test
+    void invoicePdfAdapterReturnsEmailWhenPresent() {
+        Company company = new Company();
+        Customer customer = new Customer(company);
+        customer.setEmail("info@acme.test");
+        customer.setPec("pec@acme.test");
+        Invoice invoice = new Invoice(company, customer);
+        invoice.setCurrency("EUR");
+
+        InvoicePdfAdapter adapter = new InvoicePdfAdapter(invoice, List.of(), company, customer);
+
+        assertEquals("info@acme.test", adapter.customerEmail());
     }
 }

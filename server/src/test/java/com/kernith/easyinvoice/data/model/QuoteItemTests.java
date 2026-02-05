@@ -14,12 +14,30 @@ class QuoteItemTests {
         Quote quote = new Quote(company, customer);
         QuoteItem item = new QuoteItem(quote);
 
+        assertEquals(quote, item.getQuote());
+        assertEquals(null, item.getId());
+        assertEquals(null, item.getCreatedAt());
+        assertEquals(null, item.getUpdatedAt());
+
         item.setPosition(1);
         item.setDescription("Consulting");
         item.setQuantity(new BigDecimal("2"));
+        item.setNotes("Notes");
+        item.setUnit("h");
         item.setUnitPrice(new BigDecimal("10"));
         item.setTaxRate(new BigDecimal("10"));
         item.setDiscountType(DiscountType.NONE);
+        item.setDiscountValue(BigDecimal.ZERO);
+
+        assertEquals(1, item.getPosition());
+        assertEquals("Consulting", item.getDescription());
+        assertEquals(new BigDecimal("2"), item.getQuantity());
+        assertEquals("Notes", item.getNotes());
+        assertEquals("h", item.getUnit());
+        assertEquals(new BigDecimal("10"), item.getUnitPrice());
+        assertEquals(new BigDecimal("10"), item.getTaxRate());
+        assertEquals(DiscountType.NONE, item.getDiscountType());
+        assertEquals(BigDecimal.ZERO, item.getDiscountValue());
 
         assertAmount(new BigDecimal("20"), item.getLineSubtotalAmount());
         assertAmount(new BigDecimal("2"), item.getLineTaxAmount());
@@ -60,6 +78,24 @@ class QuoteItemTests {
         assertAmount(BigDecimal.ZERO, item.getLineSubtotalAmount());
         assertAmount(BigDecimal.ZERO, item.getLineTaxAmount());
         assertAmount(BigDecimal.ZERO, item.getLineTotalAmount());
+    }
+
+    @Test
+    void nullDiscountTypeDefaultsToNone() {
+        Company company = new Company();
+        Customer customer = new Customer(company);
+        Quote quote = new Quote(company, customer);
+        QuoteItem item = new QuoteItem(quote);
+
+        item.setQuantity(new BigDecimal("2"));
+        item.setUnitPrice(new BigDecimal("10"));
+        item.setTaxRate(new BigDecimal("10"));
+        item.setDiscountType(null);
+        item.setDiscountValue(null);
+
+        assertAmount(new BigDecimal("20"), item.getLineSubtotalAmount());
+        assertAmount(new BigDecimal("2"), item.getLineTaxAmount());
+        assertAmount(new BigDecimal("22"), item.getLineTotalAmount());
     }
 
     private void assertAmount(BigDecimal expected, BigDecimal actual) {

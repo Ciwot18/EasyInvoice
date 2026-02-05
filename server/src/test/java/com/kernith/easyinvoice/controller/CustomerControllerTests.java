@@ -5,10 +5,14 @@ import com.kernith.easyinvoice.config.AuthPrincipal;
 import com.kernith.easyinvoice.config.WebConfig;
 import com.kernith.easyinvoice.data.dto.customer.CreateCustomerRequest;
 import com.kernith.easyinvoice.data.dto.customer.UpdateCustomerRequest;
+import com.kernith.easyinvoice.data.model.Company;
 import com.kernith.easyinvoice.data.model.Customer;
 import com.kernith.easyinvoice.data.model.CustomerStatus;
+import com.kernith.easyinvoice.data.model.Quote;
+import com.kernith.easyinvoice.data.model.QuoteStatus;
 import com.kernith.easyinvoice.helper.CurrentUserArgumentResolver;
 import com.kernith.easyinvoice.service.CustomerService;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
@@ -27,6 +31,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -401,6 +406,43 @@ class CustomerControllerTests {
 
             mockMvc.perform(post("/manager/customers/10/restore"))
                     .andExpect(status().isNotFound());
+        }
+    }
+
+    @Nested
+    class listCustomerQuotesTests {
+        @Test
+        void listCustomerQuotesReturnsOkWhenNotEmpty() throws Exception {
+            setPrincipal();
+            Company company = new Company();
+            Customer customer = new Customer(company);
+            customer.setDisplayName("Acme Spa");
+            Quote quote = new Quote(company, customer);
+            quote.setQuoteYear(2025);
+            quote.setQuoteNumber(7);
+            quote.setStatus(QuoteStatus.DRAFT);
+            quote.setTitle("Quote");
+            quote.setIssueDate(LocalDate.of(2025, 1, 10));
+            ReflectionTestUtils.setField(quote, "id", 77L);
+
+            when(customerService.listCustomerQuotes(eq(10L), any(AuthPrincipal.class)))
+                    .thenReturn(List.of(quote));
+
+            mockMvc.perform(get("/customer/10/quotes"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].id").value(77L))
+                    .andExpect(jsonPath("$[0].quoteNumber").value(7))
+                    .andExpect(jsonPath("$[0].customerDisplayName").value("Acme Spa"));
+        }
+
+        @Test
+        void listCustomerQuotesReturnsNoContentWhenEmpty() throws Exception {
+            setPrincipal();
+            when(customerService.listCustomerQuotes(eq(10L), any(AuthPrincipal.class)))
+                    .thenReturn(List.of());
+
+            mockMvc.perform(get("/customer/10/quotes"))
+                    .andExpect(status().isNoContent());
         }
     }
 }

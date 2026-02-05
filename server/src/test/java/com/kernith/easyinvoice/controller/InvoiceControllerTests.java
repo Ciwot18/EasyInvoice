@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kernith.easyinvoice.config.AuthPrincipal;
 import com.kernith.easyinvoice.config.WebConfig;
 import com.kernith.easyinvoice.data.dto.invoice.CreateInvoiceRequest;
+import com.kernith.easyinvoice.data.dto.invoice.InvoicePdfDownload;
+import com.kernith.easyinvoice.data.dto.invoice.InvoicePdfDto;
 import com.kernith.easyinvoice.data.dto.invoice.UpdateInvoiceRequest;
 import com.kernith.easyinvoice.data.dto.invoiceitem.CreateInvoiceItemRequest;
 import com.kernith.easyinvoice.data.model.Company;
@@ -29,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
@@ -47,6 +50,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -248,6 +253,71 @@ class InvoiceControllerTests {
 
             mockMvc.perform(get("/invoices/77"))
                     .andExpect(status().isInternalServerError());
+        }
+    }
+
+    @Nested
+    class pdfEndpointsTests {
+        @Test
+        void getInvoicePdfReturnsInlinePdf() throws Exception {
+            setPrincipal();
+            byte[] pdf = "invoice".getBytes();
+            when(pdfService.invoicePdf(eq(77L), any(AuthPrincipal.class)))
+                    .thenReturn(pdf);
+
+            mockMvc.perform(get("/invoices/77/pdf"))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("Content-Type", "application/pdf"))
+                    .andExpect(header().string("Content-Disposition", "inline; filename=invoice-77.pdf"))
+                    .andExpect(content().bytes(pdf));
+        }
+
+        @Test
+        void getInvoiceDownloadPdfReturnsAttachment() throws Exception {
+            setPrincipal();
+            byte[] pdf = "invoice".getBytes();
+            when(pdfService.invoicePdf(eq(77L), any(AuthPrincipal.class)))
+                    .thenReturn(pdf);
+
+            mockMvc.perform(get("/invoices/77/pdf-download"))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("Content-Type", "application/pdf"))
+                    .andExpect(header().string("Content-Disposition", "attachment; filename=invoice-77.pdf"))
+                    .andExpect(content().bytes(pdf));
+        }
+
+        @Test
+        void listPdfsReturnsOk() throws Exception {
+            setPrincipal();
+            List<InvoicePdfDto> pdfs = List.of(
+                    new InvoicePdfDto(11L, "INV_77.pdf", LocalDateTime.of(2025, 1, 15, 10, 0))
+            );
+            when(invoicePdfService.listVersions(eq(77L), any(AuthPrincipal.class)))
+                    .thenReturn(pdfs);
+
+            mockMvc.perform(get("/invoices/77/pdfs"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].id").value(11L))
+                    .andExpect(jsonPath("$[0].fileName").value("INV_77.pdf"))
+                    .andExpect(jsonPath("$[0].createdAt").value("2025-01-15T10:00:00"));
+        }
+
+        @Test
+        void downloadPdfReturnsResource() throws Exception {
+            setPrincipal();
+            byte[] pdf = "pdf".getBytes();
+            InvoicePdfDownload download = new InvoicePdfDownload(
+                    "INV_77.pdf",
+                    new ByteArrayResource(pdf)
+            );
+            when(invoicePdfService.download(eq(77L), eq(11L), any(AuthPrincipal.class)))
+                    .thenReturn(download);
+
+            mockMvc.perform(get("/invoices/77/pdfs/11"))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("Content-Disposition", "attachment; filename=\"INV_77.pdf\""))
+                    .andExpect(content().contentType(MediaType.APPLICATION_PDF))
+                    .andExpect(content().bytes(pdf));
         }
     }
 

@@ -39,6 +39,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -168,6 +170,37 @@ class QuoteControllerTests {
 
             mockMvc.perform(get("/quotes/77"))
                     .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    class quotePdfTests {
+        @Test
+        void getQuotePdfReturnsInlinePdf() throws Exception {
+            setPrincipal();
+            byte[] pdf = "quote".getBytes();
+            when(pdfService.quotePdf(eq(77L), any(AuthPrincipal.class)))
+                    .thenReturn(pdf);
+
+            mockMvc.perform(get("/quotes/77/pdf"))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("Content-Type", "application/pdf"))
+                    .andExpect(header().string("Content-Disposition", "inline; filename=quote-77.pdf"))
+                    .andExpect(content().bytes(pdf));
+        }
+
+        @Test
+        void getQuoteDownloadPdfReturnsAttachment() throws Exception {
+            setPrincipal();
+            byte[] pdf = "quote".getBytes();
+            when(pdfService.quotePdf(eq(77L), any(AuthPrincipal.class)))
+                    .thenReturn(pdf);
+
+            mockMvc.perform(get("/quotes/77/pdf-download"))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("Content-Type", "application/pdf"))
+                    .andExpect(header().string("Content-Disposition", "attachment; filename=quote-77.pdf"))
+                    .andExpect(content().bytes(pdf));
         }
     }
 
