@@ -3,22 +3,22 @@ INSERT INTO companies (id, name, vat_number, address) VALUES (2, 'Alpha SRL', 'I
 INSERT INTO companies (id, name, vat_number, address) VALUES (3, 'Beta SPA', 'IT000000002', 'Via Solferino 1, Lodi');
 
 -- Users for Platform (company_id=1)
-INSERT INTO users (id, company_id, email, password_hash, role, enabled)
-VALUES (13, 1, 'admin@alpha.it', '$2a$12$dummyhash3333333333333333333333333333333333333333333333', 'PLATFORM_ADMIN', TRUE);
+INSERT INTO users (id, company_id, name, email, password_hash, role, enabled)
+VALUES (13, 1, 'Platform Admin', 'admin@alpha.it', '$2a$12$dummyhash3333333333333333333333333333333333333333333333', 'PLATFORM_ADMIN', TRUE);
 
 -- Users for Alpha (company_id=2)
-INSERT INTO users (id, company_id, email, password_hash, role, enabled)
-VALUES (10, 2, 'manager@alpha.it', '$2a$12$dummyhash0000000000000000000000000000000000000000000000', 'COMPANY_MANAGER', TRUE);
-INSERT INTO users (id, company_id, email, password_hash, role, enabled)
-VALUES (11, 2, 'backoffice@alpha.it', '$2a$12$dummyhash1111111111111111111111111111111111111111111111', 'BACK_OFFICE', TRUE);
-INSERT INTO users (id, company_id, email, password_hash, role, enabled)
-VALUES (12, 2, 'zeta@alpha.it', '$2a$12$dummyhash2222222222222222222222222222222222222222222222', 'BACK_OFFICE', FALSE);
+INSERT INTO users (id, company_id, name, email, password_hash, role, enabled)
+VALUES (10, 2, 'Mario Rossi', 'manager@alpha.it', '$2a$12$dummyhash0000000000000000000000000000000000000000000000', 'COMPANY_MANAGER', TRUE);
+INSERT INTO users (id, company_id, name, email, password_hash, role, enabled)
+VALUES (11, 2, 'Laura Bianchi', 'backoffice@alpha.it', '$2a$12$dummyhash1111111111111111111111111111111111111111111111', 'BACK_OFFICE', TRUE);
+INSERT INTO users (id, company_id, name, email, password_hash, role, enabled)
+VALUES (12, 2, 'Marco Zeta', 'zeta@alpha.it', '$2a$12$dummyhash2222222222222222222222222222222222222222222222', 'BACK_OFFICE', FALSE);
 
 -- Users for Beta (company_id=3)
-INSERT INTO users (id, company_id, email, password_hash, role, enabled)
-VALUES (20, 3, 'manager@beta.it', '$2a$12$dummyhash4444444444444444444444444444444444444444444444', 'COMPANY_MANAGER', TRUE);
-INSERT INTO users (id, company_id, email, password_hash, role, enabled)
-VALUES (21, 3, 'backoffice@beta.it', '$2a$12$dummyhash5555555555555555555555555555555555555555555555', 'BACK_OFFICE', TRUE);
+INSERT INTO users (id, company_id, name, email, password_hash, role, enabled)
+VALUES (20, 3, 'Anna Verdi', 'manager@beta.it', '$2a$12$dummyhash4444444444444444444444444444444444444444444444', 'COMPANY_MANAGER', TRUE);
+INSERT INTO users (id, company_id, name, email, password_hash, role, enabled)
+VALUES (21, 3, 'Paolo Neri', 'backoffice@beta.it', '$2a$12$dummyhash5555555555555555555555555555555555555555555555', 'BACK_OFFICE', TRUE);
 
 -- Customers for Alpha (company_id=2)
 INSERT INTO customers (
