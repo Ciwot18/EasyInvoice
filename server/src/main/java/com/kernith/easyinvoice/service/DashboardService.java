@@ -51,6 +51,12 @@ public class DashboardService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Builds the manager dashboard summary for the current company.
+     *
+     * @param principal authenticated principal
+     * @return summary response
+     */
     public ManagerDashboardSummaryResponse getManagerSummary(AuthPrincipal principal) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER));
         Long companyId = Utils.getRequiredCompanyId(principal);
@@ -74,6 +80,13 @@ public class DashboardService {
         );
     }
 
+    /**
+     * Builds an invoice summary for a specific customer.
+     *
+     * @param customerId customer identifier
+     * @param principal authenticated principal
+     * @return optional summary response
+     */
     public Optional<CustomerInvoiceSummaryResponse> getCustomerInvoiceSummary(
             Long customerId,
             AuthPrincipal principal
@@ -102,6 +115,12 @@ public class DashboardService {
         ));
     }
 
+    /**
+     * Builds the platform admin dashboard summary.
+     *
+     * @param principal authenticated principal
+     * @return summary response
+     */
     public AdminDashboardSummaryResponse getAdminSummary(AuthPrincipal principal) {
         Utils.requireRoles(principal, List.of(UserRole.PLATFORM_ADMIN));
 
