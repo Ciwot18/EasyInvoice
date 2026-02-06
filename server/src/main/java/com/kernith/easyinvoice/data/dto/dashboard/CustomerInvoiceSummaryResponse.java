@@ -18,4 +18,20 @@ public record CustomerInvoiceSummaryResponse(
         BigDecimal paidTotal,
         BigDecimal issuedTotal,
         BigDecimal outstandingTotal
-) {}
+) {
+    public static CustomerInvoiceSummaryResponse from(
+            Long customerId,
+            List<InvoiceStatusAggregateResponse> invoices,
+            BigDecimal paidTotal,
+            BigDecimal issuedTotal,
+            BigDecimal outstandingTotal
+    ) {
+        return new CustomerInvoiceSummaryResponse(
+                customerId,
+                invoices,
+                paidTotal,
+                issuedTotal,
+                outstandingTotal
+        );
+    }
+}

@@ -14,4 +14,12 @@ public record QuoteStatusAggregateResponse(
         QuoteStatus status,
         long count,
         BigDecimal totalAmount
-) {}
+) {
+    public static QuoteStatusAggregateResponse from(
+            QuoteStatus status,
+            long count,
+            BigDecimal totalAmount
+    ) {
+        return new QuoteStatusAggregateResponse(status, count, totalAmount);
+    }
+}

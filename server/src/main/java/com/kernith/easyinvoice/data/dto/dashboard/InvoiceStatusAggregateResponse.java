@@ -14,4 +14,12 @@ public record InvoiceStatusAggregateResponse(
         InvoiceStatus status,
         long count,
         BigDecimal totalAmount
-) {}
+) {
+    public static InvoiceStatusAggregateResponse from(
+            InvoiceStatus status,
+            long count,
+            BigDecimal totalAmount
+    ) {
+        return new InvoiceStatusAggregateResponse(status, count, totalAmount);
+    }
+}

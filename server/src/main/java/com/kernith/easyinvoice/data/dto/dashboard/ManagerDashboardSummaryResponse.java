@@ -18,4 +18,20 @@ public record ManagerDashboardSummaryResponse(
         BigDecimal paidTotal,
         BigDecimal issuedTotal,
         BigDecimal outstandingTotal
-) {}
+) {
+    public static ManagerDashboardSummaryResponse from(
+            List<QuoteStatusAggregateResponse> quotes,
+            List<InvoiceStatusAggregateResponse> invoices,
+            BigDecimal paidTotal,
+            BigDecimal issuedTotal,
+            BigDecimal outstandingTotal
+    ) {
+        return new ManagerDashboardSummaryResponse(
+                quotes,
+                invoices,
+                paidTotal,
+                issuedTotal,
+                outstandingTotal
+        );
+    }
+}
