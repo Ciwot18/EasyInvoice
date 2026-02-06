@@ -2,6 +2,7 @@ package com.kernith.easyinvoice.data.repository;
 
 import com.kernith.easyinvoice.data.model.Invoice;
 import com.kernith.easyinvoice.data.model.InvoiceStatus;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +19,30 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     Page<Invoice> findByCompanyIdAndStatus(Long companyId, InvoiceStatus status, Pageable pageable);
 
     java.util.List<Invoice> findByCompanyIdAndCustomerIdOrderByIssueDateDesc(Long companyId, Long customerId);
+
+    @Query("""
+            select i.status as status,
+                   count(i) as count,
+                   coalesce(sum(i.totalAmount), 0) as totalAmount
+            from Invoice i
+            where i.company.id = :companyId
+            group by i.status
+            """)
+    List<InvoiceStatusAggregate> aggregateByStatus(@Param("companyId") Long companyId);
+
+    @Query("""
+            select i.status as status,
+                   count(i) as count,
+                   coalesce(sum(i.totalAmount), 0) as totalAmount
+            from Invoice i
+            where i.company.id = :companyId
+              and i.customer.id = :customerId
+            group by i.status
+            """)
+    List<InvoiceStatusAggregate> aggregateByStatusForCustomer(
+            @Param("companyId") Long companyId,
+            @Param("customerId") Long customerId
+    );
 
     @Query("""
             select coalesce(max(i.invoiceNumber), 0)

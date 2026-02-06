@@ -19,6 +19,8 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Optional<Customer> findByIdAndCompanyIdAndStatus(Long id, Long companyId, CustomerStatus Status);
 
+    Optional<Customer> findByIdAndCompanyId(Long id, Long companyId);
+
     Optional<Customer> findByCompanyIdAndVatNumberAndStatus(Long companyId, String vatNumber, CustomerStatus status);
 
     @Query("""

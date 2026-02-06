@@ -2,6 +2,7 @@ package com.kernith.easyinvoice.data.repository;
 
 import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.data.model.QuoteStatus;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +19,16 @@ public interface QuoteRepository extends JpaRepository<Quote, Long> {
     Page<Quote> findByCompanyIdAndStatus(Long companyId, QuoteStatus status, Pageable pageable);
 
     java.util.List<Quote> findByCompanyIdAndCustomerIdOrderByIssueDateDesc(Long companyId, Long customerId);
+
+    @Query("""
+            select q.status as status,
+                   count(q) as count,
+                   coalesce(sum(q.totalAmount), 0) as totalAmount
+            from Quote q
+            where q.company.id = :companyId
+            group by q.status
+            """)
+    List<QuoteStatusAggregate> aggregateByStatus(@Param("companyId") Long companyId);
 
     @Query("""
             select coalesce(max(q.quoteNumber), 0)
