@@ -1,6 +1,7 @@
 package com.kernith.easyinvoice.helper;
 
 import com.kernith.easyinvoice.config.AuthPrincipal;
+import com.kernith.easyinvoice.data.model.DiscountType;
 import com.kernith.easyinvoice.data.model.UserRole;
 import java.math.BigDecimal;
 import java.util.List;
@@ -58,5 +59,35 @@ class UtilsTests {
     void escHandlesNullAndSpecialChars() {
         assertEquals("", Utils.esc(null));
         assertEquals("&lt;&gt;&amp;&quot;&#39;", Utils.esc("<>&\"'"));
+    }
+
+    @Test
+    void getRequiredCompanyIdReturnsCompanyId() {
+        AuthPrincipal principal = new AuthPrincipal(1L, 42L, "COMPANY_MANAGER", List.of());
+        assertEquals(42L, Utils.getRequiredCompanyId(principal));
+    }
+
+    @Test
+    void getRequiredCompanyIdThrowsWhenMissingPrincipal() {
+        assertThrows(ResponseStatusException.class, () -> Utils.getRequiredCompanyId(null));
+    }
+
+    @Test
+    void valueNormalizationHelpersWork() {
+        assertEquals(new BigDecimal("10.5"), Utils.defaultBigDecimal(new BigDecimal("10.5"), BigDecimal.ONE));
+        assertEquals(BigDecimal.ONE, Utils.defaultBigDecimal(null, BigDecimal.ONE));
+        assertEquals("test", Utils.normalizeRequired("  test  "));
+        assertEquals(null, Utils.normalizeRequired(null));
+        assertEquals(null, Utils.trimToNull("   "));
+        assertEquals("value", Utils.trimToNull(" value "));
+        assertEquals("EUR", Utils.normalizeCurrency(null));
+        assertEquals("EUR", Utils.normalizeCurrency(" "));
+        assertEquals("USD", Utils.normalizeCurrency(" usd "));
+    }
+
+    @Test
+    void mapDiscountTypeDefaultsToNone() {
+        assertEquals(DiscountType.NONE, Utils.mapDiscountType(null));
+        assertEquals(DiscountType.PERCENT, Utils.mapDiscountType(DiscountType.PERCENT));
     }
 }
