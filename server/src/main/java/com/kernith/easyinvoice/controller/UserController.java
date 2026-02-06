@@ -70,6 +70,22 @@ public class UserController {
 	}
 
 	/**
+	 * Lists users across all companies (platform admin only).
+	 *
+	 * @param principal authenticated principal
+	 * @return list of user summaries or {@code 204 No Content} if empty
+	 * @throws org.springframework.web.server.ResponseStatusException if authorization fails
+	 */
+	@GetMapping("/platform/users")
+	public ResponseEntity<List<UserSummary>> listPlatformUsers(@CurrentUser AuthPrincipal principal) {
+		List<User> users = userService.listPlatformUsers(principal);
+		if (users.isEmpty()) {
+			return ResponseEntity.noContent().build();
+		}
+		return ResponseEntity.ok(users.stream().map(UserSummary::from).toList());
+	}
+
+	/**
 	 * Disables a user in the current company.
 	 *
 	 * @param userId target user identifier

@@ -92,6 +92,18 @@ public class UserService {
     }
 
     /**
+     * Lists users across all companies.
+     *
+     * @param principal authenticated principal
+     * @return list of users for all companies
+     * @throws ResponseStatusException if authorization fails
+     */
+    public List<User> listPlatformUsers(AuthPrincipal principal) {
+        Utils.requireRoles(principal, List.of(UserRole.PLATFORM_ADMIN));
+        return userRepository.findAllByOrderByCompanyIdAscRoleAscEmailAsc();
+    }
+
+    /**
      * Disables a user in the current company.
      *
      * @param userId target user identifier

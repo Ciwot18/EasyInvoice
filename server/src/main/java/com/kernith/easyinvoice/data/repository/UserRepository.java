@@ -16,6 +16,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
 	List<User> findByCompanyIdAndRoleOrderByEmailAsc(Long companyId, UserRole role);
 
+	List<User> findAllByOrderByCompanyIdAscRoleAscEmailAsc();
+
 	Optional<User> findByIdAndCompanyId(Long id, Long companyId);
 
 	long countByEnabledTrue();
