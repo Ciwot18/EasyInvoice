@@ -59,7 +59,7 @@ class CompanyServiceTests {
         when(companyRepository.findById(10L)).thenReturn(Optional.empty());
 
         AuthPrincipal principal = new AuthPrincipal(1L, 1L, "PLATFORM_ADMIN", List.of());
-        CreateCompanyManagerRequest req = new CreateCompanyManagerRequest("manager@acme.test", "password123");
+        CreateCompanyManagerRequest req = new CreateCompanyManagerRequest("manager@acme.test", "Mario Monti", "password123");
 
         Optional<?> result = companyService.createCompanyManager(10L, req, principal);
 
@@ -120,7 +120,7 @@ class CompanyServiceTests {
                 .thenReturn(Optional.of(new User(company)));
 
         AuthPrincipal principal = new AuthPrincipal(1L, 1L, "PLATFORM_ADMIN", List.of());
-        CreateCompanyManagerRequest req = new CreateCompanyManagerRequest("manager@acme.test", "password123");
+        CreateCompanyManagerRequest req = new CreateCompanyManagerRequest("manager@acme.test", "Mario Monti","password123");
 
         assertThrows(ResponseStatusException.class,
                 () -> companyService.createCompanyManager(10L, req, principal));

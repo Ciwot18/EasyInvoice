@@ -2,6 +2,8 @@ package com.kernith.easyinvoice.data.repository;
 
 import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.data.model.QuoteStatus;
+import java.math.BigDecimal;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
@@ -68,5 +70,31 @@ class QuoteRepositoryTests {
                 PageRequest.of(0, 10, Sort.by("issueDate"))
         );
         assertThat(all.getTotalElements()).isGreaterThanOrEqualTo(1);
+    }
+
+    @Test
+    void testAggregateByStatus() {
+        List<QuoteStatusAggregate> aggregates = quoteRepository.aggregateByStatus(2L);
+
+        assertThat(aggregates).isNotEmpty();
+        QuoteStatusAggregate draft = aggregates.stream()
+                .filter(row -> row.getStatus() == QuoteStatus.DRAFT)
+                .findFirst()
+                .orElseThrow();
+        QuoteStatusAggregate sent = aggregates.stream()
+                .filter(row -> row.getStatus() == QuoteStatus.SENT)
+                .findFirst()
+                .orElseThrow();
+        QuoteStatusAggregate accepted = aggregates.stream()
+                .filter(row -> row.getStatus() == QuoteStatus.ACCEPTED)
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(draft.getCount()).isEqualTo(1L);
+        assertThat(draft.getTotalAmount()).isEqualByComparingTo(new BigDecimal("122.00"));
+        assertThat(sent.getCount()).isEqualTo(1L);
+        assertThat(sent.getTotalAmount()).isEqualByComparingTo(new BigDecimal("244.00"));
+        assertThat(accepted.getCount()).isEqualTo(1L);
+        assertThat(accepted.getTotalAmount()).isEqualByComparingTo(new BigDecimal("183.00"));
     }
 }

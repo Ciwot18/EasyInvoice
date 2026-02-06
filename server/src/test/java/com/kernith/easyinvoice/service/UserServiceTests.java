@@ -14,10 +14,12 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import org.springframework.web.server.ResponseStatusException;
 
 class UserServiceTests {
 
@@ -29,7 +31,7 @@ class UserServiceTests {
         AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
         when(userRepository.findById(7L)).thenReturn(Optional.empty());
 
-        CreateBackofficeUserRequest request = new CreateBackofficeUserRequest("new@acme.test", "password123");
+        CreateBackofficeUserRequest request = new CreateBackofficeUserRequest("new@acme.test", "Mario Monti","password123");
         User created = userService.createBackofficeUser(request, principal);
 
         assertNull(created);
@@ -52,7 +54,7 @@ class UserServiceTests {
                 .thenReturn(Optional.empty());
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        CreateBackofficeUserRequest request = new CreateBackofficeUserRequest("new@acme.test", "password123");
+        CreateBackofficeUserRequest request = new CreateBackofficeUserRequest("new@acme.test", "Mario Monti","password123");
         User created = userService.createBackofficeUser(request, principal);
 
         assertEquals("new@acme.test", created.getEmail());
@@ -89,6 +91,31 @@ class UserServiceTests {
         List<User> users = userService.listCompanyUsers(principal);
 
         assertEquals(1, users.size());
+    }
+
+    @Test
+    void listPlatformUsersReturnsUsersForPlatformAdmin() {
+        UserRepository userRepository = mock(UserRepository.class);
+        UserService userService = new UserService(userRepository);
+
+        Company company = mock(Company.class);
+        List<User> expected = List.of(new User(company));
+        AuthPrincipal principal = new AuthPrincipal(1L, 1L, "PLATFORM_ADMIN", List.of());
+
+        when(userRepository.findAllByOrderByCompanyIdAscRoleAscEmailAsc()).thenReturn(expected);
+
+        List<User> users = userService.listPlatformUsers(principal);
+
+        assertEquals(1, users.size());
+    }
+
+    @Test
+    void listPlatformUsersThrowsWhenRoleIsNotPlatformAdmin() {
+        UserRepository userRepository = mock(UserRepository.class);
+        UserService userService = new UserService(userRepository);
+        AuthPrincipal principal = new AuthPrincipal(7L, 10L, "COMPANY_MANAGER", List.of());
+
+        assertThrows(ResponseStatusException.class, () -> userService.listPlatformUsers(principal));
     }
 
     @Test

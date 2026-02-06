@@ -82,7 +82,7 @@ class UserControllerTests {
         @Test
         void createBackofficeUserReturnsCreatedWhenValid() throws Exception {
             setPrincipal();
-            CreateBackofficeUserRequest req = new CreateBackofficeUserRequest("new@acme.test", "password123");
+            CreateBackofficeUserRequest req = new CreateBackofficeUserRequest("new@acme.test", "Filippo Conte", "password123");
             User user = mock(User.class);
             when(user.getId()).thenReturn(55L);
             when(user.getEmail()).thenReturn("new@acme.test");
@@ -104,7 +104,7 @@ class UserControllerTests {
         @Test
         void createBackofficeUserReturnsNotFoundWhenServiceReturnsNull() throws Exception {
             setPrincipal();
-            CreateBackofficeUserRequest req = new CreateBackofficeUserRequest("new@acme.test", "password123");
+            CreateBackofficeUserRequest req = new CreateBackofficeUserRequest("new@acme.test", "Filippo Conte", "password123");
             when(userService.createBackofficeUser(any(CreateBackofficeUserRequest.class), any(AuthPrincipal.class)))
                     .thenReturn(null);
 
@@ -143,6 +143,38 @@ class UserControllerTests {
                     .thenReturn(List.of());
 
             mockMvc.perform(get("/manager/users"))
+                    .andExpect(status().isNoContent());
+        }
+    }
+
+    @Nested
+    class listPlatformUsersTests {
+        @Test
+        void listPlatformUsersReturnsUsersWhenNotEmpty() throws Exception {
+            setPrincipal();
+            User user = mock(User.class);
+            when(user.getId()).thenReturn(2L);
+            when(user.getEmail()).thenReturn("adminlist@acme.test");
+            when(user.getRole()).thenReturn(UserRole.COMPANY_MANAGER);
+            when(user.isEnabled()).thenReturn(true);
+            when(userService.listPlatformUsers(any(AuthPrincipal.class)))
+                    .thenReturn(List.of(user));
+
+            mockMvc.perform(get("/platform/users"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$[0].id").value(2L))
+                    .andExpect(jsonPath("$[0].email").value("adminlist@acme.test"))
+                    .andExpect(jsonPath("$[0].role").value("COMPANY_MANAGER"))
+                    .andExpect(jsonPath("$[0].enabled").value(true));
+        }
+
+        @Test
+        void listPlatformUsersReturnsNoContentWhenEmpty() throws Exception {
+            setPrincipal();
+            when(userService.listPlatformUsers(any(AuthPrincipal.class)))
+                    .thenReturn(List.of());
+
+            mockMvc.perform(get("/platform/users"))
                     .andExpect(status().isNoContent());
         }
     }

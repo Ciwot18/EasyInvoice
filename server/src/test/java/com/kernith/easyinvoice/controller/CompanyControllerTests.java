@@ -6,6 +6,7 @@ import com.kernith.easyinvoice.config.WebConfig;
 import com.kernith.easyinvoice.data.dto.company.CompanyDetailResponse;
 import com.kernith.easyinvoice.data.dto.company.CompanySummaryResponse;
 import com.kernith.easyinvoice.data.dto.company.CreateCompanyManagerRequest;
+import com.kernith.easyinvoice.data.dto.company.CreatePlatformCompanyManagerRequest;
 import com.kernith.easyinvoice.data.dto.company.CreateCompanyRequest;
 import com.kernith.easyinvoice.data.dto.user.UserSummary;
 import com.kernith.easyinvoice.data.model.UserRole;
@@ -171,8 +172,8 @@ class CompanyControllerTests {
         @Test
         void createCompanyManagerReturnsCreatedWhenFound() throws Exception {
             setPrincipal();
-            CreateCompanyManagerRequest req = new CreateCompanyManagerRequest("manager@acme.test", "password123");
-            UserSummary res = new UserSummary(77L, "manager@acme.test", UserRole.COMPANY_MANAGER, true);
+            CreateCompanyManagerRequest req = new CreateCompanyManagerRequest("manager@acme.test", "Carlo Conti", "password123");
+            UserSummary res = new UserSummary(77L, "manager@acme.test", "Carlo Conti", UserRole.COMPANY_MANAGER, true);
             when(companyService.createCompanyManager(eq(10L), any(CreateCompanyManagerRequest.class), any(AuthPrincipal.class)))
                     .thenReturn(Optional.of(res));
 
@@ -189,11 +190,46 @@ class CompanyControllerTests {
         @Test
         void createCompanyManagerReturnsNotFoundWhenMissing() throws Exception {
             setPrincipal();
-            CreateCompanyManagerRequest req = new CreateCompanyManagerRequest("manager@acme.test", "password123");
+            CreateCompanyManagerRequest req = new CreateCompanyManagerRequest("manager@acme.test", "Filippo Conte", "password123");
             when(companyService.createCompanyManager(eq(10L), any(CreateCompanyManagerRequest.class), any(AuthPrincipal.class)))
                     .thenReturn(Optional.empty());
 
             mockMvc.perform(post("/platform/companies/10/managers")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void createCompanyManagerForPlatformReturnsCreatedWhenFound() throws Exception {
+            setPrincipal();
+            CreatePlatformCompanyManagerRequest req = new CreatePlatformCompanyManagerRequest(
+                    10L, "manager@acme.test", "Carlo Conti", "password123"
+            );
+            UserSummary res = new UserSummary(77L, "manager@acme.test", "Carlo Conti", UserRole.COMPANY_MANAGER, true);
+            when(companyService.createCompanyManager(eq(10L), any(CreateCompanyManagerRequest.class), any(AuthPrincipal.class)))
+                    .thenReturn(Optional.of(res));
+
+            mockMvc.perform(post("/platform/managers")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(req)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.id").value(77L))
+                    .andExpect(jsonPath("$.email").value("manager@acme.test"))
+                    .andExpect(jsonPath("$.role").value("COMPANY_MANAGER"))
+                    .andExpect(jsonPath("$.enabled").value(true));
+        }
+
+        @Test
+        void createCompanyManagerForPlatformReturnsNotFoundWhenCompanyMissing() throws Exception {
+            setPrincipal();
+            CreatePlatformCompanyManagerRequest req = new CreatePlatformCompanyManagerRequest(
+                    10L, "manager@acme.test", "Carlo Conti", "password123"
+            );
+            when(companyService.createCompanyManager(eq(10L), any(CreateCompanyManagerRequest.class), any(AuthPrincipal.class)))
+                    .thenReturn(Optional.empty());
+
+            mockMvc.perform(post("/platform/managers")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(req)))
                     .andExpect(status().isNotFound());

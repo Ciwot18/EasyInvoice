@@ -2,6 +2,8 @@ package com.kernith.easyinvoice.data.repository;
 
 import com.kernith.easyinvoice.data.model.Invoice;
 import com.kernith.easyinvoice.data.model.InvoiceStatus;
+import java.math.BigDecimal;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
@@ -68,5 +70,45 @@ class InvoiceRepositoryTests {
                 PageRequest.of(0, 10, Sort.by("issueDate"))
         );
         assertThat(all.getTotalElements()).isGreaterThanOrEqualTo(1);
+    }
+
+    @Test
+    void testAggregateByStatus() {
+        List<InvoiceStatusAggregate> aggregates = invoiceRepository.aggregateByStatus(2L);
+
+        assertThat(aggregates).isNotEmpty();
+        InvoiceStatusAggregate issued = aggregates.stream()
+                .filter(row -> row.getStatus() == InvoiceStatus.ISSUED)
+                .findFirst()
+                .orElseThrow();
+        InvoiceStatusAggregate paid = aggregates.stream()
+                .filter(row -> row.getStatus() == InvoiceStatus.PAID)
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(issued.getCount()).isEqualTo(1L);
+        assertThat(issued.getTotalAmount()).isEqualByComparingTo(new BigDecimal("183.00"));
+        assertThat(paid.getCount()).isEqualTo(1L);
+        assertThat(paid.getTotalAmount()).isEqualByComparingTo(new BigDecimal("244.00"));
+    }
+
+    @Test
+    void testAggregateByStatusForCustomer() {
+        List<InvoiceStatusAggregate> aggregates = invoiceRepository.aggregateByStatusForCustomer(2L, 100L);
+
+        assertThat(aggregates).isNotEmpty();
+        InvoiceStatusAggregate draft = aggregates.stream()
+                .filter(row -> row.getStatus() == InvoiceStatus.DRAFT)
+                .findFirst()
+                .orElseThrow();
+        InvoiceStatusAggregate issued = aggregates.stream()
+                .filter(row -> row.getStatus() == InvoiceStatus.ISSUED)
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(draft.getCount()).isEqualTo(1L);
+        assertThat(draft.getTotalAmount()).isEqualByComparingTo(new BigDecimal("122.00"));
+        assertThat(issued.getCount()).isEqualTo(1L);
+        assertThat(issued.getTotalAmount()).isEqualByComparingTo(new BigDecimal("183.00"));
     }
 }
