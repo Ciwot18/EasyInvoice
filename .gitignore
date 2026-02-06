@@ -1,5 +1,5 @@
 # Momentaneamente escludo il client dal controllo #
-/client
+# /client
 
 server/HELP.md
 target/
