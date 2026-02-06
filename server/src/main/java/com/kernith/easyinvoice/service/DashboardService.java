@@ -17,7 +17,12 @@ import com.kernith.easyinvoice.data.repository.QuoteRepository;
 import com.kernith.easyinvoice.data.repository.QuoteStatusAggregate;
 import com.kernith.easyinvoice.data.repository.UserRepository;
 import com.kernith.easyinvoice.helper.Utils;
+import java.lang.management.ManagementFactory;
 import java.math.BigDecimal;
+import java.nio.file.FileStore;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -71,7 +76,7 @@ public class DashboardService {
         BigDecimal outstandingTotal = issuedTotal
                 .add(getInvoiceTotal(invoiceAggregates, InvoiceStatus.OVERDUE));
 
-        return new ManagerDashboardSummaryResponse(
+        return ManagerDashboardSummaryResponse.from(
                 quoteAggregates,
                 invoiceAggregates,
                 paidTotal,
@@ -106,7 +111,7 @@ public class DashboardService {
         BigDecimal outstandingTotal = issuedTotal
                 .add(getInvoiceTotal(invoiceAggregates, InvoiceStatus.OVERDUE));
 
-        return Optional.of(new CustomerInvoiceSummaryResponse(
+        return Optional.of(CustomerInvoiceSummaryResponse.from(
                 customerId,
                 invoiceAggregates,
                 paidTotal,
@@ -129,19 +134,72 @@ public class DashboardService {
         long enabledUsers = userRepository.countByEnabledTrue();
         long disabledUsers = userRepository.countByEnabledFalse();
 
-        return new AdminDashboardSummaryResponse(companies, users, enabledUsers, disabledUsers);
+        SystemStats stats = resolveSystemStats();
+
+        return AdminDashboardSummaryResponse.from(
+                companies,
+                users,
+                enabledUsers,
+                disabledUsers,
+                stats.diskTotalBytes(),
+                stats.diskFreeBytes(),
+                stats.ramTotalBytes(),
+                stats.ramFreeBytes(),
+                stats.diskPath()
+        );
     }
+
+    private SystemStats resolveSystemStats() {
+        String diskPath = System.getProperty("user.dir");
+        if (diskPath == null || diskPath.isBlank()) {
+            diskPath = "/";
+        }
+
+        Long diskTotal = null;
+        Long diskFree = null;
+        Path path = Paths.get(diskPath);
+        try {
+            if (!Files.exists(path)) {
+                path = Paths.get("/");
+                diskPath = "/";
+            }
+            FileStore store = Files.getFileStore(path);
+            diskTotal = store.getTotalSpace();
+            diskFree = store.getUsableSpace();
+        } catch (Exception ex) {
+            diskTotal = null;
+            diskFree = null;
+        }
+
+        Long ramTotal = null;
+        Long ramFree = null;
+        var osBean = ManagementFactory.getOperatingSystemMXBean();
+        if (osBean instanceof com.sun.management.OperatingSystemMXBean sunBean) {
+            ramTotal = sunBean.getTotalPhysicalMemorySize();
+            ramFree = sunBean.getFreePhysicalMemorySize();
+        }
+
+        return new SystemStats(diskTotal, diskFree, ramTotal, ramFree, diskPath);
+    }
+
+    private record SystemStats(
+            Long diskTotalBytes,
+            Long diskFreeBytes,
+            Long ramTotalBytes,
+            Long ramFreeBytes,
+            String diskPath
+    ) {}
 
     private List<QuoteStatusAggregateResponse> normalizeQuoteAggregates(List<QuoteStatusAggregate> rows) {
         Map<QuoteStatus, QuoteStatusAggregateResponse> map = new EnumMap<>(QuoteStatus.class);
         for (QuoteStatus status : QuoteStatus.values()) {
-            map.put(status, new QuoteStatusAggregateResponse(status, 0L, BigDecimal.ZERO));
+            map.put(status, QuoteStatusAggregateResponse.from(status, 0L, BigDecimal.ZERO));
         }
         for (QuoteStatusAggregate row : rows) {
             QuoteStatus status = row.getStatus();
             long count = row.getCount() == null ? 0L : row.getCount();
             BigDecimal total = row.getTotalAmount() == null ? BigDecimal.ZERO : row.getTotalAmount();
-            map.put(status, new QuoteStatusAggregateResponse(status, count, total));
+            map.put(status, QuoteStatusAggregateResponse.from(status, count, total));
         }
         return new ArrayList<>(map.values());
     }
@@ -149,13 +207,13 @@ public class DashboardService {
     private List<InvoiceStatusAggregateResponse> normalizeInvoiceAggregates(List<InvoiceStatusAggregate> rows) {
         Map<InvoiceStatus, InvoiceStatusAggregateResponse> map = new EnumMap<>(InvoiceStatus.class);
         for (InvoiceStatus status : InvoiceStatus.values()) {
-            map.put(status, new InvoiceStatusAggregateResponse(status, 0L, BigDecimal.ZERO));
+            map.put(status, InvoiceStatusAggregateResponse.from(status, 0L, BigDecimal.ZERO));
         }
         for (InvoiceStatusAggregate row : rows) {
             InvoiceStatus status = row.getStatus();
             long count = row.getCount() == null ? 0L : row.getCount();
             BigDecimal total = row.getTotalAmount() == null ? BigDecimal.ZERO : row.getTotalAmount();
-            map.put(status, new InvoiceStatusAggregateResponse(status, count, total));
+            map.put(status, InvoiceStatusAggregateResponse.from(status, count, total));
         }
         return new ArrayList<>(map.values());
     }
