@@ -17,6 +17,7 @@ import com.kernith.easyinvoice.data.repository.QuoteRepository;
 import com.kernith.easyinvoice.data.repository.QuoteStatusAggregate;
 import com.kernith.easyinvoice.data.repository.UserRepository;
 import com.kernith.easyinvoice.helper.Utils;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.math.BigDecimal;
 import java.nio.file.FileStore;
@@ -28,6 +29,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.sql.DataSource;
 import org.springframework.stereotype.Service;
 
 /**
@@ -41,19 +43,22 @@ public class DashboardService {
     private final CustomerRepository customerRepository;
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
+    private final DataSource dataSource;
 
     public DashboardService(
             QuoteRepository quoteRepository,
             InvoiceRepository invoiceRepository,
             CustomerRepository customerRepository,
             CompanyRepository companyRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            DataSource dataSource
     ) {
         this.quoteRepository = quoteRepository;
         this.invoiceRepository = invoiceRepository;
         this.customerRepository = customerRepository;
         this.companyRepository = companyRepository;
         this.userRepository = userRepository;
+        this.dataSource = dataSource;
     }
 
     /**
@@ -135,6 +140,7 @@ public class DashboardService {
         long disabledUsers = userRepository.countByEnabledFalse();
 
         SystemStats stats = resolveSystemStats();
+        DatabaseStats dbStats = resolveDatabaseStats();
 
         return AdminDashboardSummaryResponse.from(
                 companies,
@@ -145,7 +151,9 @@ public class DashboardService {
                 stats.diskFreeBytes(),
                 stats.ramTotalBytes(),
                 stats.ramFreeBytes(),
-                stats.diskPath()
+                stats.diskPath(),
+                dbStats.dbFileBytes(),
+                dbStats.dbPath()
         );
     }
 
@@ -182,12 +190,108 @@ public class DashboardService {
         return new SystemStats(diskTotal, diskFree, ramTotal, ramFree, diskPath);
     }
 
+    private DatabaseStats resolveDatabaseStats() {
+        String url = null;
+        try (var connection = dataSource.getConnection()) {
+            url = connection.getMetaData().getURL();
+        } catch (Exception ex) {
+            return new DatabaseStats(null, "unavailable");
+        }
+
+        if (url == null || url.isBlank()) {
+            return new DatabaseStats(null, "unavailable");
+        }
+
+        if (url.startsWith("jdbc:h2:mem:")) {
+            return new DatabaseStats(null, "in-memory");
+        }
+
+        if (!url.startsWith("jdbc:h2:")) {
+            return new DatabaseStats(null, "unsupported");
+        }
+
+        String spec = url.substring("jdbc:h2:".length());
+        if (spec.startsWith("mem:")) {
+            return new DatabaseStats(null, "in-memory");
+        }
+        if (spec.startsWith("file:")) {
+            spec = spec.substring("file:".length());
+        }
+
+        int optsIndex = spec.indexOf(';');
+        if (optsIndex >= 0) {
+            spec = spec.substring(0, optsIndex);
+        }
+
+        String resolvedPath = resolveH2Path(spec);
+        if (resolvedPath == null) {
+            return new DatabaseStats(null, "unavailable");
+        }
+
+        Path dbFile = resolveH2DatabaseFile(Paths.get(resolvedPath));
+        if (dbFile == null) {
+            return new DatabaseStats(null, resolvedPath);
+        }
+
+        try {
+            return new DatabaseStats(Files.size(dbFile), dbFile.toString());
+        } catch (IOException ex) {
+            return new DatabaseStats(null, dbFile.toString());
+        }
+    }
+
+    private String resolveH2Path(String spec) {
+        if (spec == null || spec.isBlank()) {
+            return null;
+        }
+        String path = spec.trim();
+        if (path.startsWith("~")) {
+            String home = System.getProperty("user.home");
+            if (home != null) {
+                path = home + path.substring(1);
+            }
+        }
+        Path resolved = Paths.get(path);
+        if (!resolved.isAbsolute()) {
+            String base = System.getProperty("user.dir");
+            if (base != null && !base.isBlank()) {
+                resolved = Paths.get(base).resolve(resolved);
+            }
+        }
+        return resolved.normalize().toString();
+    }
+
+    private Path resolveH2DatabaseFile(Path basePath) {
+        if (basePath == null) {
+            return null;
+        }
+        String name = basePath.toString();
+        if (name.endsWith(".mv.db") || name.endsWith(".h2.db")) {
+            return Files.exists(basePath) ? basePath : null;
+        }
+
+        Path mv = Paths.get(name + ".mv.db");
+        if (Files.exists(mv)) {
+            return mv;
+        }
+        Path legacy = Paths.get(name + ".h2.db");
+        if (Files.exists(legacy)) {
+            return legacy;
+        }
+        return Files.exists(basePath) ? basePath : null;
+    }
+
     private record SystemStats(
             Long diskTotalBytes,
             Long diskFreeBytes,
             Long ramTotalBytes,
             Long ramFreeBytes,
             String diskPath
+    ) {}
+
+    private record DatabaseStats(
+            Long dbFileBytes,
+            String dbPath
     ) {}
 
     private List<QuoteStatusAggregateResponse> normalizeQuoteAggregates(List<QuoteStatusAggregate> rows) {
