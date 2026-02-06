@@ -8,7 +8,6 @@ import com.kernith.easyinvoice.data.model.Customer;
 import com.kernith.easyinvoice.data.model.CustomerStatus;
 import com.kernith.easyinvoice.data.model.Quote;
 import com.kernith.easyinvoice.data.model.QuoteItem;
-import com.kernith.easyinvoice.data.model.DiscountType;
 import com.kernith.easyinvoice.data.model.QuoteStatus;
 import com.kernith.easyinvoice.data.model.UserRole;
 import com.kernith.easyinvoice.data.repository.CompanyRepository;
@@ -29,6 +28,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Quote use-cases including creation, updates, listing, and status transitions.
+ */
 @Service
 public class QuoteService {
 
@@ -37,6 +39,14 @@ public class QuoteService {
     private final CompanyRepository companyRepository;
     private final CustomerRepository customerRepository;
 
+    /**
+     * Creates the service with repositories.
+     *
+     * @param quoteRepository quote repository
+     * @param quoteItemRepository quote item repository
+     * @param companyRepository company repository
+     * @param customerRepository customer repository
+     */
     public QuoteService(
             QuoteRepository quoteRepository,
             QuoteItemRepository quoteItemRepository,
@@ -49,10 +59,21 @@ public class QuoteService {
         this.customerRepository = customerRepository;
     }
 
+    /**
+     * Creates a new quote and computes totals from items.
+     *
+     * <p>Lifecycle: validate role and input, allocate quote number, persist quote,
+     * create items, recalc totals, then save updated quote.</p>
+     *
+     * @param request quote creation payload
+     * @param principal authenticated principal
+     * @return saved quote
+     * @throws ResponseStatusException if validation or authorization fails
+     */
     public Quote createQuote(CreateQuoteRequest request, AuthPrincipal principal) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
 
-        Long companyId = getRequiredCompanyId(principal);
+        Long companyId = Utils.getRequiredCompanyId(principal);
         Optional<Company> optionalCompany = companyRepository.findById(companyId);
         if  (optionalCompany.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Company not found");
@@ -78,11 +99,11 @@ public class QuoteService {
         quote.setQuoteYear(quoteYear);
         quote.setQuoteNumber(quoteNumber);
         quote.setStatus(QuoteStatus.DRAFT);
-        quote.setTitle(trimToNull(request.title()));
-        quote.setNotes(trimToNull(request.notes()));
+        quote.setTitle(Utils.trimToNull(request.title()));
+        quote.setNotes(Utils.trimToNull(request.notes()));
         quote.setIssueDate(issueDate);
         quote.setValidUntil(request.validUntil());
-        quote.setCurrency(normalizeCurrency(request.currency()));
+        quote.setCurrency(Utils.normalizeCurrency(request.currency()));
         // At the moment I am just creating the Quote to then be able of adding the elements
         // The calculations will be made at the end of the insert of the items
         Quote savedQuote = quoteRepository.save(quote);
@@ -92,15 +113,15 @@ public class QuoteService {
             QuoteItem item = new QuoteItem(
                     savedQuote,
                     itemRequest.position(),
-                    normalizeRequired(itemRequest.description()),
-                    defaultBigDecimal(itemRequest.quantity(), BigDecimal.ONE),
-                    defaultBigDecimal(itemRequest.unitPrice(), BigDecimal.ZERO),
-                    defaultBigDecimal(itemRequest.taxRate(), BigDecimal.ZERO),
-                    itemRequest.discountType() == null ? DiscountType.NONE : itemRequest.discountType(),
-                    defaultBigDecimal(itemRequest.discountValue(), BigDecimal.ZERO)
+                    Utils.normalizeRequired(itemRequest.description()),
+                    Utils.defaultBigDecimal(itemRequest.quantity(), BigDecimal.ONE),
+                    Utils.defaultBigDecimal(itemRequest.unitPrice(), BigDecimal.ZERO),
+                    Utils.defaultBigDecimal(itemRequest.taxRate(), BigDecimal.ZERO),
+                    Utils.mapDiscountType(itemRequest.discountType()),
+                    Utils.defaultBigDecimal(itemRequest.discountValue(), BigDecimal.ZERO)
             );
-            item.setNotes(trimToNull(itemRequest.notes()));
-            item.setUnit(trimToNull(itemRequest.unit()));
+            item.setNotes(Utils.trimToNull(itemRequest.notes()));
+            item.setUnit(Utils.trimToNull(itemRequest.unit()));
             items.add(item);
         });
 
@@ -111,26 +132,45 @@ public class QuoteService {
         return quoteRepository.save(savedQuote);
     }
 
+    /**
+     * Retrieves a quote by id for the current company.
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return optional quote
+     * @throws ResponseStatusException if authorization fails
+     */
     public Optional<Quote> getQuote(Long quoteId, AuthPrincipal principal) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
-        Long companyId = getRequiredCompanyId(principal);
+        Long companyId = Utils.getRequiredCompanyId(principal);
         return quoteRepository.findByIdAndCompanyId(quoteId, companyId);
     }
 
+    /**
+     * Updates editable fields of a quote.
+     *
+     * <p>Lifecycle: validate role and existence, apply updates, then save.</p>
+     *
+     * @param quoteId quote identifier
+     * @param request update payload
+     * @param principal authenticated principal
+     * @return updated quote
+     * @throws ResponseStatusException if validation or authorization fails
+     */
     // Update just in the description, to modify one of the items there is a specific endpoint
     public Quote updateQuote(Long quoteId, UpdateQuoteRequest request, AuthPrincipal principal) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
-        Long companyId = getRequiredCompanyId(principal);
+        Long companyId = Utils.getRequiredCompanyId(principal);
         Optional<Quote> optionalQuote = quoteRepository.findByIdAndCompanyId(quoteId, companyId);
         if  (optionalQuote.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Parameters");
         }
         Quote quote = optionalQuote.get();
         if (request.title() != null) {
-            quote.setTitle(trimToNull(request.title()));
+            quote.setTitle(Utils.trimToNull(request.title()));
         }
         if (request.notes() != null) {
-            quote.setNotes(trimToNull(request.notes()));
+            quote.setNotes(Utils.trimToNull(request.notes()));
         }
         if (request.issueDate() != null) {
             quote.setIssueDate(request.issueDate());
@@ -139,15 +179,26 @@ public class QuoteService {
             quote.setValidUntil(request.validUntil());
         }
         if (request.currency() != null) {
-            quote.setCurrency(normalizeCurrency(request.currency()));
+            quote.setCurrency(Utils.normalizeCurrency(request.currency()));
         }
 
         return quoteRepository.save(quote);
     }
 
+    /**
+     * Lists quotes with pagination, sorting, and optional search.
+     *
+     * @param principal authenticated principal
+     * @param page page index (0-based)
+     * @param size page size
+     * @param sort sort spec (field,dir)
+     * @param q optional search query
+     * @return page of quotes
+     * @throws ResponseStatusException if authorization fails
+     */
     public Page<Quote> listQuotes(AuthPrincipal principal, int page, int size, String sort, String q) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
-        Long companyId = getRequiredCompanyId(principal);
+        Long companyId = Utils.getRequiredCompanyId(principal);
         PageRequest pageRequest = toPageRequest(page, size, sort);
         if (q == null || q.isBlank()) {
             return quoteRepository.findByCompanyId(companyId, pageRequest);
@@ -155,22 +206,62 @@ public class QuoteService {
         return quoteRepository.searchByCompanyId(companyId, q.trim(), pageRequest);
     }
 
+    /**
+     * Archives a quote.
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return {@code true} if the quote was found and updated
+     * @throws ResponseStatusException if authorization fails
+     */
     public Boolean archiveQuote(Long quoteId, AuthPrincipal principal) {
         return transitionStatus(quoteId, principal, QuoteStatus.ARCHIVED);
     }
 
+    /**
+     * Marks a quote as sent.
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return {@code true} if the quote was found and updated
+     * @throws ResponseStatusException if authorization fails
+     */
     public Boolean sendQuote(Long quoteId, AuthPrincipal principal) {
         return transitionStatus(quoteId, principal, QuoteStatus.SENT);
     }
 
+    /**
+     * Marks a quote as accepted.
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return {@code true} if the quote was found and updated
+     * @throws ResponseStatusException if authorization fails
+     */
     public Boolean acceptQuote(Long quoteId, AuthPrincipal principal) {
         return transitionStatus(quoteId, principal, QuoteStatus.ACCEPTED);
     }
 
+    /**
+     * Marks a quote as rejected.
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return {@code true} if the quote was found and updated
+     * @throws ResponseStatusException if authorization fails
+     */
     public Boolean rejectQuote(Long quoteId, AuthPrincipal principal) {
         return transitionStatus(quoteId, principal, QuoteStatus.REJECTED);
     }
 
+    /**
+     * Marks a quote as converted.
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return {@code true} if the quote was found and updated
+     * @throws ResponseStatusException if authorization fails
+     */
     public Boolean convertQuote(Long quoteId, AuthPrincipal principal) {
         return transitionStatus(quoteId, principal, QuoteStatus.CONVERTED);
     }
@@ -181,7 +272,7 @@ public class QuoteService {
             QuoteStatus newStatus
     ) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
-        Long companyId = getRequiredCompanyId(principal);
+        Long companyId = Utils.getRequiredCompanyId(principal);
         Optional<Quote> optionalQuote = quoteRepository.findByIdAndCompanyId(quoteId, companyId);
         if (optionalQuote.isEmpty()) {
             return Boolean.FALSE;
@@ -200,35 +291,7 @@ public class QuoteService {
         return Boolean.TRUE;
     }
 
-    private Long getRequiredCompanyId(AuthPrincipal principal) {
-        if (principal == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing principal");
-        }
-        return principal.companyId();
-    }
-
-    private String trimToNull(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    private String normalizeRequired(String value) {
-        return value == null ? null : value.trim();
-    }
-
-    private BigDecimal defaultBigDecimal(BigDecimal value, BigDecimal fallback) {
-        return value == null ? fallback : value;
-    }
-
-    private String normalizeCurrency(String currency) {
-        if (currency == null || currency.isBlank()) {
-            return "EUR";
-        }
-        return currency.trim().toUpperCase(Locale.ROOT);
-    }
+    // moved to Utils
 
     private PageRequest toPageRequest(int page, int size, String sort) {
         int safePage = Math.max(page, 0);

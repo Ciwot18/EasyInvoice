@@ -1,10 +1,13 @@
 package com.kernith.easyinvoice.helper;
 
 import com.kernith.easyinvoice.config.AuthPrincipal;
+import com.kernith.easyinvoice.data.model.DiscountType;
 import com.kernith.easyinvoice.data.model.UserRole;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.util.Locale;
 import java.util.List;
 
 /**
@@ -53,6 +56,81 @@ public class Utils {
      * @return input or empty string if null
      */
     public static String nvl(String s) { return s == null ? "" : s; }
+
+    /**
+     * Ensures the principal and company id are present.
+     *
+     * @param principal authenticated principal
+     * @return company id
+     * @throws ResponseStatusException if missing
+     */
+    public static Long getRequiredCompanyId(AuthPrincipal principal) {
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing principal");
+        }
+        return principal.companyId();
+    }
+
+    /**
+     * Returns the fallback value when the input is null.
+     *
+     * @param value input value
+     * @param fallback fallback value
+     * @return value or fallback
+     */
+    public static BigDecimal defaultBigDecimal(BigDecimal value, BigDecimal fallback) {
+        return value == null ? fallback : value;
+    }
+
+    /**
+     * Trims a value and returns null when empty.
+     *
+     * @param value input value
+     * @return trimmed value or null
+     */
+    public static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    /**
+     * Trims a required value.
+     *
+     * @param value input value
+     * @return trimmed value or null
+     */
+    public static String normalizeRequired(String value) {
+        return value == null ? null : value.trim();
+    }
+
+    /**
+     * Normalizes currency codes with a default fallback.
+     *
+     * @param currency currency code
+     * @return normalized code
+     */
+    public static String normalizeCurrency(String currency) {
+        if (currency == null || currency.isBlank()) {
+            return "EUR";
+        }
+        return currency.trim().toUpperCase(Locale.ROOT);
+    }
+
+    /**
+     * Maps null discount types to a safe default.
+     *
+     * @param discountType discount type
+     * @return non-null discount type
+     */
+    public static DiscountType mapDiscountType(DiscountType discountType) {
+        if (discountType == null) {
+            return DiscountType.NONE;
+        }
+        return DiscountType.valueOf(discountType.name());
+    }
 
     /**
      * Formats a monetary amount with 2 decimal places and a currency symbol prefix.

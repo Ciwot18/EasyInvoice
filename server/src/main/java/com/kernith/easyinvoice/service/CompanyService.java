@@ -20,6 +20,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Platform-level company management use-cases.
+ */
 @Service
 public class CompanyService {
 
@@ -27,11 +30,27 @@ public class CompanyService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
+    /**
+     * Creates the service with repositories.
+     *
+     * @param companyRepository company repository
+     * @param userRepository user repository
+     */
     public CompanyService(CompanyRepository companyRepository, UserRepository userRepository) {
         this.companyRepository = companyRepository;
         this.userRepository = userRepository;
     }
 
+    /**
+     * Creates a company as a platform admin.
+     *
+     * <p>Lifecycle: validate platform admin, map fields, save company.</p>
+     *
+     * @param request company creation payload
+     * @param principal authenticated principal
+     * @return saved company summary
+     * @throws ResponseStatusException if authorization fails
+     */
     public CompanySummaryResponse createCompany(CreateCompanyRequest request, AuthPrincipal principal) {
         requirePlatformAdmin(principal);
 
@@ -43,6 +62,13 @@ public class CompanyService {
         return CompanySummaryResponse.from(saved);
     }
 
+    /**
+     * Lists all companies as a platform admin.
+     *
+     * @param principal authenticated principal
+     * @return list of company summaries
+     * @throws ResponseStatusException if authorization fails
+     */
     public List<CompanySummaryResponse> listCompanies(AuthPrincipal principal) {
         requirePlatformAdmin(principal);
 
@@ -52,6 +78,14 @@ public class CompanyService {
                 .toList();
     }
 
+    /**
+     * Retrieves company details by id.
+     *
+     * @param companyId company identifier
+     * @param principal authenticated principal
+     * @return optional company details
+     * @throws ResponseStatusException if authorization fails
+     */
     public Optional<CompanyDetailResponse> getCompany(Long companyId, AuthPrincipal principal) {
         requirePlatformAdmin(principal);
 
@@ -59,6 +93,18 @@ public class CompanyService {
                 .map(CompanyDetailResponse::from);
     }
 
+    /**
+     * Creates a company manager for a given company.
+     *
+     * <p>Lifecycle: validate platform admin, ensure company exists, validate email uniqueness,
+     * create user with manager role, then save.</p>
+     *
+     * @param companyId company identifier
+     * @param request manager creation payload
+     * @param principal authenticated principal
+     * @return optional manager summary
+     * @throws ResponseStatusException if validation or authorization fails
+     */
     public Optional<UserSummary> createCompanyManager(Long companyId, CreateCompanyManagerRequest request, AuthPrincipal principal) {
         requirePlatformAdmin(principal);
 

@@ -3,7 +3,6 @@ package com.kernith.easyinvoice.service;
 import com.kernith.easyinvoice.config.AuthPrincipal;
 import com.kernith.easyinvoice.data.dto.invoiceitem.CreateInvoiceItemRequest;
 import com.kernith.easyinvoice.data.dto.invoiceitem.UpdateInvoiceItemRequest;
-import com.kernith.easyinvoice.data.model.DiscountType;
 import com.kernith.easyinvoice.data.model.Invoice;
 import com.kernith.easyinvoice.data.model.InvoiceItem;
 import com.kernith.easyinvoice.data.model.InvoiceStatus;
@@ -18,43 +17,83 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Manages invoice items and keeps invoice totals in sync.
+ */
 @Service
 public class InvoiceItemService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceItemRepository invoiceItemRepository;
 
+    /**
+     * Creates the service with repositories.
+     *
+     * @param invoiceRepository invoice repository
+     * @param invoiceItemRepository invoice item repository
+     */
     public InvoiceItemService(InvoiceRepository invoiceRepository, InvoiceItemRepository invoiceItemRepository) {
         this.invoiceRepository = invoiceRepository;
         this.invoiceItemRepository = invoiceItemRepository;
     }
 
+    /**
+     * Adds a new item to an invoice and recalculates totals.
+     *
+     * <p>Lifecycle: validate role and invoice state, create item, save, then recalc totals.</p>
+     *
+     * @param invoiceId invoice identifier
+     * @param request item creation payload
+     * @param principal authenticated principal
+     * @return saved invoice item
+     * @throws ResponseStatusException if role or invoice state is invalid
+     */
     public InvoiceItem addInvoiceItem(Long invoiceId, CreateInvoiceItemRequest request, AuthPrincipal principal) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
         Invoice invoice = getEditableInvoice(invoiceId, principal);
 
         InvoiceItem item = new InvoiceItem(invoice);
         item.setPosition(request.position());
-        item.setDescription(normalizeRequired(request.description()));
-        item.setNotes(trimToNull(request.notes()));
-        item.setQuantity(defaultBigDecimal(request.quantity(), BigDecimal.ONE));
-        item.setUnit(trimToNull(request.unit()));
-        item.setUnitPrice(defaultBigDecimal(request.unitPrice(), BigDecimal.ZERO));
-        item.setTaxRate(defaultBigDecimal(request.taxRate(), BigDecimal.ZERO));
-        item.setDiscountType(mapDiscountType(request.discountType()));
-        item.setDiscountValue(defaultBigDecimal(request.discountValue(), BigDecimal.ZERO));
+        item.setDescription(Utils.normalizeRequired(request.description()));
+        item.setNotes(Utils.trimToNull(request.notes()));
+        item.setQuantity(Utils.defaultBigDecimal(request.quantity(), BigDecimal.ONE));
+        item.setUnit(Utils.trimToNull(request.unit()));
+        item.setUnitPrice(Utils.defaultBigDecimal(request.unitPrice(), BigDecimal.ZERO));
+        item.setTaxRate(Utils.defaultBigDecimal(request.taxRate(), BigDecimal.ZERO));
+        item.setDiscountType(Utils.mapDiscountType(request.discountType()));
+        item.setDiscountValue(Utils.defaultBigDecimal(request.discountValue(), BigDecimal.ZERO));
 
         InvoiceItem saved = invoiceItemRepository.save(item);
         recalcInvoiceTotals(invoice);
         return saved;
     }
 
+    /**
+     * Lists items for a given invoice.
+     *
+     * @param invoiceId invoice identifier
+     * @param principal authenticated principal
+     * @return list of invoice items
+     * @throws ResponseStatusException if role or invoice state is invalid
+     */
     public List<InvoiceItem> listInvoiceItems(Long invoiceId, AuthPrincipal principal) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
         Invoice invoice = getInvoiceOrThrow(invoiceId, principal);
         return invoiceItemRepository.findByInvoiceIdOrderByPositionAsc(invoice.getId());
     }
 
+    /**
+     * Updates an existing invoice item and recalculates totals.
+     *
+     * <p>Lifecycle: validate role and invoice state, update fields, save, then recalc totals.</p>
+     *
+     * @param invoiceId invoice identifier
+     * @param itemId item identifier
+     * @param request update payload
+     * @param principal authenticated principal
+     * @return saved invoice item
+     * @throws ResponseStatusException if role or invoice state is invalid
+     */
     public InvoiceItem updateInvoiceItem(
             Long invoiceId,
             Long itemId,
@@ -74,16 +113,16 @@ public class InvoiceItemService {
             item.setPosition(request.position());
         }
         if (request.description() != null) {
-            item.setDescription(normalizeRequired(request.description()));
+            item.setDescription(Utils.normalizeRequired(request.description()));
         }
         if (request.notes() != null) {
-            item.setNotes(trimToNull(request.notes()));
+            item.setNotes(Utils.trimToNull(request.notes()));
         }
         if (request.quantity() != null) {
             item.setQuantity(request.quantity());
         }
         if (request.unit() != null) {
-            item.setUnit(trimToNull(request.unit()));
+            item.setUnit(Utils.trimToNull(request.unit()));
         }
         if (request.unitPrice() != null) {
             item.setUnitPrice(request.unitPrice());
@@ -92,7 +131,7 @@ public class InvoiceItemService {
             item.setTaxRate(request.taxRate());
         }
         if (request.discountType() != null) {
-            item.setDiscountType(mapDiscountType(request.discountType()));
+            item.setDiscountType(Utils.mapDiscountType(request.discountType()));
         }
         if (request.discountValue() != null) {
             item.setDiscountValue(request.discountValue());
@@ -103,11 +142,20 @@ public class InvoiceItemService {
         return saved;
     }
 
+    /**
+     * Deletes an invoice item and recalculates totals if found.
+     *
+     * @param invoiceId invoice identifier
+     * @param itemId item identifier
+     * @param principal authenticated principal
+     * @return optional result indicating success
+     * @throws ResponseStatusException if role or invoice state is invalid
+     */
     public Optional<Boolean> deleteInvoiceItem(Long invoiceId, Long itemId, AuthPrincipal principal) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
         Optional<Invoice> optionalInvoice = invoiceRepository.findByIdAndCompanyId(
                 invoiceId,
-                getRequiredCompanyId(principal)
+                Utils.getRequiredCompanyId(principal)
         );
         if (optionalInvoice.isEmpty()) {
             return Optional.empty();
@@ -127,7 +175,7 @@ public class InvoiceItemService {
     }
 
     private Invoice getInvoiceOrThrow(Long invoiceId, AuthPrincipal principal) {
-        Long companyId = getRequiredCompanyId(principal);
+        Long companyId = Utils.getRequiredCompanyId(principal);
         Optional<Invoice> optionalInvoice = invoiceRepository.findByIdAndCompanyId(invoiceId, companyId);
         if (optionalInvoice.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invoice is not editable");
@@ -149,36 +197,4 @@ public class InvoiceItemService {
         invoiceRepository.save(invoice);
     }
 
-    private BigDecimal defaultBigDecimal(BigDecimal value, BigDecimal fallback) {
-        return value == null ? fallback : value;
-    }
-
-    private String normalizeRequired(String value) {
-        if (value == null) {
-            return null;
-        }
-        return value.trim();
-    }
-
-    private String trimToNull(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    private Long getRequiredCompanyId(AuthPrincipal principal) {
-        if (principal == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing principal");
-        }
-        return principal.companyId();
-    }
-
-    private DiscountType mapDiscountType(DiscountType discountType) {
-        if (discountType == null) {
-            return DiscountType.NONE;
-        }
-        return DiscountType.valueOf(discountType.name());
-    }
 }

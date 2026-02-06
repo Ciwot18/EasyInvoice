@@ -17,16 +17,35 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * User management use-cases for company managers and back office users.
+ */
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
+    /**
+     * Creates the service with repository.
+     *
+     * @param userRepository user repository
+     */
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Creates a back office user for the current company.
+     *
+     * <p>Lifecycle: validate role, load current user, validate email uniqueness,
+     * create user, then save.</p>
+     *
+     * @param request user creation payload
+     * @param principal authenticated principal
+     * @return saved user or null if current user is missing
+     * @throws ResponseStatusException if validation or authorization fails
+     */
     public User createBackofficeUser(CreateBackofficeUserRequest request, AuthPrincipal principal) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER));   //Only company manager can create back_office users
         Optional<User> optionalUser = getRequiredCurrentUser(principal);
@@ -52,6 +71,13 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    /**
+     * Lists users for the current company.
+     *
+     * @param principal authenticated principal
+     * @return list of users (empty if current user missing)
+     * @throws ResponseStatusException if authorization fails
+     */
     public List<User> listCompanyUsers(AuthPrincipal principal) {
         Optional<User> optionalUser = getRequiredCurrentUser(principal);
         if (optionalUser.isEmpty()) {
@@ -63,6 +89,14 @@ public class UserService {
         return userRepository.findByCompanyIdOrderByRoleAscEmailAsc(companyId);
     }
 
+    /**
+     * Disables a user in the current company.
+     *
+     * @param userId target user identifier
+     * @param principal authenticated principal
+     * @return optional result indicating success
+     * @throws ResponseStatusException if authorization fails
+     */
     public Optional<Boolean> disableUser(Long userId, AuthPrincipal principal) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.PLATFORM_ADMIN));  //Also Platform_Admin can block a user if bad behaviour or suspected hack is detected
         Optional<User> optionalUser = getRequiredCurrentUser(principal);
@@ -82,10 +116,22 @@ public class UserService {
         return Optional.of(Boolean.TRUE);
     }
 
+    /**
+     * Returns the current back office user profile.
+     *
+     * @param principal authenticated principal
+     * @return optional user
+     */
     public Optional<User> getBackofficeProfile(AuthPrincipal principal) {
         return getRequiredCurrentUser(principal);
     }
 
+    /**
+     * Returns the current user profile.
+     *
+     * @param principal authenticated principal
+     * @return optional user
+     */
     public Optional<User> getCurrentUser(AuthPrincipal principal) {
         return getRequiredCurrentUser(principal);
     }

@@ -18,6 +18,9 @@ import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+/**
+ * Creates PDF backups for a company by zipping its stored documents.
+ */
 @Service
 public class BackupService {
     private static final Logger log = LoggerFactory.getLogger(BackupService.class);
@@ -28,12 +31,27 @@ public class BackupService {
     private final Path backupLogFile;
     private final Object logLock = new Object();
 
+    /**
+     * Creates the service and resolves storage paths.
+     *
+     * @param storageRoot base storage directory
+     */
     public BackupService(@Value("${storage.root:storage}") String storageRoot) {
         this.storageRoot = Paths.get(storageRoot).toAbsolutePath().normalize();
         this.backupRoot = this.storageRoot.resolve("backup").normalize();
         this.backupLogFile = this.backupRoot.resolve("backup-debug.log");
     }
 
+    /**
+     * Builds a ZIP archive of all PDFs for a company.
+     *
+     * <p>Lifecycle: validate input, resolve company path, gather PDFs, zip, and log.</p>
+     *
+     * @param companyId company identifier
+     * @return output ZIP path or null if company folder is missing
+     * @throws IllegalArgumentException if companyId is null
+     * @throws IllegalStateException if backup creation fails
+     */
     public Path backupCompany(Long companyId) {
         if (companyId == null) {
             throw new IllegalArgumentException("CompanyId is required for backup");
@@ -65,6 +83,11 @@ public class BackupService {
         }
     }
 
+    /**
+     * Appends a log line to the backup debug log.
+     *
+     * @param message log message
+     */
     public void logEvent(String message) {
         String line = LocalDateTime.now().format(TS_FORMAT) + " - " + message;
         synchronized (logLock) {
@@ -83,6 +106,14 @@ public class BackupService {
         }
     }
 
+    /**
+     * Creates a ZIP archive containing PDF files under the company root.
+     *
+     * @param companyRoot company storage directory
+     * @param outputFile output zip file
+     * @return number of files added to the archive
+     * @throws IOException if file operations fail
+     */
     private int createZip(Path companyRoot, Path outputFile) throws IOException {
         List<Path> files;
         try (var stream = Files.walk(companyRoot)) {
@@ -106,6 +137,13 @@ public class BackupService {
         return files.size();
     }
 
+    /**
+     * Resolves the storage directory for a company.
+     *
+     * @param companyId company identifier
+     * @return normalized company directory
+     * @throws IllegalStateException if the path is invalid
+     */
     private Path resolveCompanyRoot(Long companyId) {
         Path dir = storageRoot.resolve("companies").resolve(companyId.toString()).normalize();
         if (!dir.startsWith(storageRoot)) {
@@ -114,6 +152,13 @@ public class BackupService {
         return dir;
     }
 
+    /**
+     * Resolves the output directory for company backups.
+     *
+     * @param companyId company identifier
+     * @return normalized backup directory
+     * @throws IllegalStateException if the path is invalid
+     */
     private Path resolveBackupDir(Long companyId) {
         Path dir = backupRoot.resolve(companyId.toString()).normalize();
         if (!dir.startsWith(backupRoot)) {

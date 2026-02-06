@@ -18,6 +18,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
+/**
+ * Generates PDF documents for invoices and quotes.
+ */
 @Service
 public class PdfService {
 
@@ -26,6 +29,14 @@ public class PdfService {
     private final QuoteRepository quoteRepo;
     private final QuoteItemRepository quoteItemRepo;
 
+    /**
+     * Creates the service with repositories needed for rendering.
+     *
+     * @param invoiceRepo invoice repository
+     * @param invoiceItemRepo invoice item repository
+     * @param quoteRepo quote repository
+     * @param quoteItemRepo quote item repository
+     */
     public PdfService(
             InvoiceRepository invoiceRepo,
             InvoiceItemRepository invoiceItemRepo,
@@ -38,6 +49,16 @@ public class PdfService {
         this.quoteItemRepo = quoteItemRepo;
     }
 
+    /**
+     * Builds the PDF for an invoice.
+     *
+     * <p>Lifecycle: load invoice and items, adapt to PDF view, build HTML, render PDF.</p>
+     *
+     * @param invoiceId invoice identifier
+     * @param principal authenticated principal
+     * @return PDF bytes
+     * @throws org.springframework.web.server.ResponseStatusException if the invoice does not belong to the company
+     */
     @Transactional(readOnly = true)
     public byte[] invoicePdf(Long invoiceId, AuthPrincipal principal) {
         Invoice inv = invoiceRepo.findById(invoiceId).orElseThrow();
@@ -59,6 +80,16 @@ public class PdfService {
         return HtmlToPdfRenderer.render(html);
     }
 
+    /**
+     * Builds the PDF for a quote.
+     *
+     * <p>Lifecycle: load quote and items, adapt to PDF view, build HTML, render PDF.</p>
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return PDF bytes
+     * @throws org.springframework.web.server.ResponseStatusException if the quote does not belong to the company
+     */
     @Transactional(readOnly = true)
     public byte[] quotePdf(Long quoteId, AuthPrincipal principal) {
         Quote quote = quoteRepo.findById(quoteId).orElseThrow();

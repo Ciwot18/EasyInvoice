@@ -11,6 +11,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Scheduled job that enqueues company backups and runs workers.
+ */
 @Configuration
 @EnableScheduling
 public class BackupScheduler {
@@ -21,6 +24,13 @@ public class BackupScheduler {
     private final BackupService backupService;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
+    /**
+     * Creates the scheduler with required dependencies.
+     *
+     * @param companyRepository company repository
+     * @param backupQueue backup queue
+     * @param backupService backup service
+     */
     public BackupScheduler(
             CompanyRepository companyRepository,
             BackupQueue backupQueue,
@@ -31,6 +41,12 @@ public class BackupScheduler {
         this.backupService = backupService;
     }
 
+    /**
+     * Schedules weekly backups by enqueuing all companies and starting workers.
+     *
+     * <p>Lifecycle: guard against overlapping runs, enqueue companies, start workers,
+     * then await completion.</p>
+     */
     @Scheduled(cron = "${backup.cron:0 0 2 ? * SUN}", zone = "${backup.zone:Europe/Rome}")
     public void scheduleWeeklyBackups() {
         if (!running.compareAndSet(false, true)) {

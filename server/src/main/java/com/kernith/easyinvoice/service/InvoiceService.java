@@ -19,6 +19,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+/**
+ * Invoice use-cases including creation, updates, listing, and status transitions.
+ */
 @Service
 public class InvoiceService {
 
@@ -29,6 +32,16 @@ public class InvoiceService {
     private final QuoteRepository quoteRepository;
     private final InvoicePdfService invoicePdfService;
 
+    /**
+     * Creates the service with repositories and supporting services.
+     *
+     * @param invoiceRepository invoice repository
+     * @param invoiceItemRepository invoice item repository
+     * @param companyRepository company repository
+     * @param customerRepository customer repository
+     * @param quoteRepository quote repository
+     * @param invoicePdfService PDF archive service
+     */
     public InvoiceService(
             InvoiceRepository invoiceRepository,
             InvoiceItemRepository invoiceItemRepository,
@@ -45,10 +58,21 @@ public class InvoiceService {
         this.invoicePdfService = invoicePdfService;
     }
 
+    /**
+     * Creates a new invoice from scratch and computes totals from items.
+     *
+     * <p>Lifecycle: validate role and input, allocate invoice number, persist invoice,
+     * create items, recalc totals, then save updated invoice.</p>
+     *
+     * @param request invoice creation payload
+     * @param principal authenticated principal
+     * @return saved invoice
+     * @throws ResponseStatusException if validation or authorization fails
+     */
     public Invoice createInvoice(CreateInvoiceRequest request, AuthPrincipal principal) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
 
-        Long companyId = getRequiredCompanyId(principal);
+        Long companyId = Utils.getRequiredCompanyId(principal);
         Optional<Company> optionalCompany = companyRepository.findById(companyId);
         if (optionalCompany.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Company not found");
@@ -77,11 +101,11 @@ public class InvoiceService {
         invoice.setInvoiceYear(invoiceYear);
         invoice.setInvoiceNumber(invoiceNumber);
         invoice.setStatus(InvoiceStatus.DRAFT);
-        invoice.setTitle(trimToNull(request.title()));
-        invoice.setNotes(trimToNull(request.notes()));
+        invoice.setTitle(Utils.trimToNull(request.title()));
+        invoice.setNotes(Utils.trimToNull(request.notes()));
         invoice.setIssueDate(issueDate);
         invoice.setDueDate(request.dueDate());
-        invoice.setCurrency(normalizeCurrency(request.currency()));
+        invoice.setCurrency(Utils.normalizeCurrency(request.currency()));
 
         Invoice savedInvoice = invoiceRepository.save(invoice);
         List<InvoiceItem> items = new ArrayList<>();
@@ -89,15 +113,15 @@ public class InvoiceService {
             InvoiceItem item = new InvoiceItem(
                     savedInvoice,
                     itemRequest.position(),
-                    normalizeRequired(itemRequest.description()),
-                    defaultBigDecimal(itemRequest.quantity(), BigDecimal.ONE),
-                    defaultBigDecimal(itemRequest.unitPrice(), BigDecimal.ZERO),
-                    defaultBigDecimal(itemRequest.taxRate(), BigDecimal.ZERO),
-                    mapDiscountType(itemRequest.discountType()),
-                    defaultBigDecimal(itemRequest.discountValue(), BigDecimal.ZERO)
+                    Utils.normalizeRequired(itemRequest.description()),
+                    Utils.defaultBigDecimal(itemRequest.quantity(), BigDecimal.ONE),
+                    Utils.defaultBigDecimal(itemRequest.unitPrice(), BigDecimal.ZERO),
+                    Utils.defaultBigDecimal(itemRequest.taxRate(), BigDecimal.ZERO),
+                    Utils.mapDiscountType(itemRequest.discountType()),
+                    Utils.defaultBigDecimal(itemRequest.discountValue(), BigDecimal.ZERO)
             );
-            item.setNotes(trimToNull(itemRequest.notes()));
-            item.setUnit(trimToNull(itemRequest.unit()));
+            item.setNotes(Utils.trimToNull(itemRequest.notes()));
+            item.setUnit(Utils.trimToNull(itemRequest.unit()));
             items.add(item);
         });
 
@@ -106,9 +130,20 @@ public class InvoiceService {
         return invoiceRepository.save(savedInvoice);
     }
 
+    /**
+     * Creates a new invoice by converting a quote.
+     *
+     * <p>Lifecycle: validate role and quote, allocate invoice number, copy items,
+     * save invoice, and recalc totals if items are present.</p>
+     *
+     * @param quoteId quote identifier
+     * @param principal authenticated principal
+     * @return saved invoice
+     * @throws ResponseStatusException if validation or authorization fails
+     */
     public Invoice createInvoiceFromQuote(Long quoteId, AuthPrincipal principal) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
-        Long companyId = getRequiredCompanyId(principal);
+        Long companyId = Utils.getRequiredCompanyId(principal);
 
         Optional<Quote> optionalQuote = quoteRepository.findByIdAndCompanyId(quoteId, companyId);
         if (optionalQuote.isEmpty()) {
@@ -137,21 +172,40 @@ public class InvoiceService {
         return savedInvoice;
     }
 
+    /**
+     * Retrieves an invoice by id for the current company.
+     *
+     * @param invoiceId invoice identifier
+     * @param principal authenticated principal
+     * @return optional invoice
+     * @throws ResponseStatusException if authorization fails
+     */
     public Optional<Invoice> getInvoice(Long invoiceId, AuthPrincipal principal) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
-        Long companyId = getRequiredCompanyId(principal);
+        Long companyId = Utils.getRequiredCompanyId(principal);
         return invoiceRepository.findByIdAndCompanyId(invoiceId, companyId);
     }
 
+    /**
+     * Updates editable fields on a draft invoice.
+     *
+     * <p>Lifecycle: validate role and draft status, apply updates, then save.</p>
+     *
+     * @param invoiceId invoice identifier
+     * @param request update payload
+     * @param principal authenticated principal
+     * @return updated invoice
+     * @throws ResponseStatusException if validation or authorization fails
+     */
     public Invoice updateInvoice(Long invoiceId, UpdateInvoiceRequest request, AuthPrincipal principal) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
         Invoice invoice = getEditableInvoice(invoiceId, principal);
 
         if (request.title() != null) {
-            invoice.setTitle(trimToNull(request.title()));
+            invoice.setTitle(Utils.trimToNull(request.title()));
         }
         if (request.notes() != null) {
-            invoice.setNotes(trimToNull(request.notes()));
+            invoice.setNotes(Utils.trimToNull(request.notes()));
         }
         if (request.issueDate() != null) {
             invoice.setIssueDate(request.issueDate());
@@ -160,15 +214,26 @@ public class InvoiceService {
             invoice.setDueDate(request.dueDate());
         }
         if (request.currency() != null) {
-            invoice.setCurrency(normalizeCurrency(request.currency()));
+            invoice.setCurrency(Utils.normalizeCurrency(request.currency()));
         }
 
         return invoiceRepository.save(invoice);
     }
 
+    /**
+     * Lists invoices with pagination, sorting, and optional search.
+     *
+     * @param principal authenticated principal
+     * @param page page index (0-based)
+     * @param size page size
+     * @param sort sort spec (field,dir)
+     * @param q optional search query
+     * @return page of invoices
+     * @throws ResponseStatusException if authorization fails
+     */
     public Page<Invoice> listInvoices(AuthPrincipal principal, int page, int size, String sort, String q) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
-        Long companyId = getRequiredCompanyId(principal);
+        Long companyId = Utils.getRequiredCompanyId(principal);
         PageRequest pageRequest = toPageRequest(page, size, sort);
         if (q == null || q.isBlank()) {
             return invoiceRepository.findByCompanyId(companyId, pageRequest);
@@ -176,15 +241,41 @@ public class InvoiceService {
         return invoiceRepository.searchByCompanyId(companyId, q.trim(), pageRequest);
     }
 
+    /**
+     * Issues an invoice and stores its PDF snapshot.
+     *
+     * <p>Lifecycle: transition status to ISSUED, then generate and archive PDF.</p>
+     *
+     * @param invoiceId invoice identifier
+     * @param principal authenticated principal
+     * @return saved PDF archive
+     * @throws ResponseStatusException if authorization fails
+     */
     public InvoicePdfArchive issueInvoice(Long invoiceId, AuthPrincipal principal) {
         Boolean result = transitionStatus(invoiceId, principal, InvoiceStatus.ISSUED);
         return invoicePdfService.saveIssuedPdf(invoiceId, principal);
     }
 
+    /**
+     * Marks an invoice as paid.
+     *
+     * @param invoiceId invoice identifier
+     * @param principal authenticated principal
+     * @return {@code true} if the invoice was found and updated
+     * @throws ResponseStatusException if authorization fails
+     */
     public Boolean payInvoice(Long invoiceId, AuthPrincipal principal) {
         return transitionStatus(invoiceId, principal, InvoiceStatus.PAID);
     }
 
+    /**
+     * Marks an invoice as overdue.
+     *
+     * @param invoiceId invoice identifier
+     * @param principal authenticated principal
+     * @return {@code true} if the invoice was found and updated
+     * @throws ResponseStatusException if authorization fails
+     */
     public Boolean markInvoiceOverdue(Long invoiceId, AuthPrincipal principal) {
         return transitionStatus(invoiceId, principal, InvoiceStatus.OVERDUE);
     }
@@ -195,7 +286,7 @@ public class InvoiceService {
             InvoiceStatus newStatus
     ) {
         Utils.requireRoles(principal, List.of(UserRole.COMPANY_MANAGER, UserRole.BACK_OFFICE));
-        Long companyId = getRequiredCompanyId(principal);
+        Long companyId = Utils.getRequiredCompanyId(principal);
         Optional<Invoice> optionalInvoice = invoiceRepository.findByIdAndCompanyId(invoiceId, companyId);
         if (optionalInvoice.isEmpty()) {
             return Boolean.FALSE;
@@ -213,7 +304,7 @@ public class InvoiceService {
     }
 
     private Invoice getEditableInvoice(Long invoiceId, AuthPrincipal principal) {
-        Long companyId = getRequiredCompanyId(principal);
+        Long companyId = Utils.getRequiredCompanyId(principal);
         Optional<Invoice> optionalInvoice = invoiceRepository.findByIdAndCompanyId(invoiceId, companyId);
         if (optionalInvoice.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Parameters");
@@ -223,36 +314,6 @@ public class InvoiceService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invoice is not editable");
         }
         return invoice;
-    }
-
-    private Long getRequiredCompanyId(AuthPrincipal principal) {
-        if (principal == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing principal");
-        }
-        return principal.companyId();
-    }
-
-    private BigDecimal defaultBigDecimal(BigDecimal value, BigDecimal fallback) {
-        return value == null ? fallback : value;
-    }
-
-    private String trimToNull(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
-    }
-
-    private String normalizeRequired(String value) {
-        return value == null ? null : value.trim();
-    }
-
-    private String normalizeCurrency(String currency) {
-        if (currency == null || currency.isBlank()) {
-            return "EUR";
-        }
-        return currency.trim().toUpperCase(Locale.ROOT);
     }
 
     private PageRequest toPageRequest(int page, int size, String sort) {
@@ -285,10 +346,4 @@ public class InvoiceService {
         return Sort.by(sortDirection, mappedProperty).and(Sort.by(Sort.Direction.ASC, "id"));
     }
 
-    private DiscountType mapDiscountType(DiscountType discountType) {
-        if (discountType == null) {
-            return DiscountType.NONE;
-        }
-        return DiscountType.valueOf(discountType.name());
-    }
 }

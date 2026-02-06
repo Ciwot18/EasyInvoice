@@ -7,6 +7,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+/**
+ * Authentication use-cases for login and token issuance.
+ */
 @Service
 public class AuthService {
 
@@ -14,12 +17,28 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final JwtService jwtService;
 
+    /**
+     * Creates the service with required repositories and JWT utilities.
+     *
+     * @param userRepository user repository
+     * @param jwtService JWT service for token generation
+     */
     public AuthService(UserRepository userRepository,
                        JwtService jwtService) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
     }
 
+    /**
+     * Validates credentials and issues a JWT for the user.
+     *
+     * <p>Lifecycle: find user, verify enabled flag, compare password hash,
+     * then generate and return the token.</p>
+     *
+     * @param req login request
+     * @return login response with token and identity info
+     * @throws RuntimeException if credentials are invalid or the user is disabled
+     */
     public LoginResponse login(LoginRequest req) {
         var user = userRepository
                 .findByCompanyIdAndEmailIgnoreCase(req.companyId(), req.email())
