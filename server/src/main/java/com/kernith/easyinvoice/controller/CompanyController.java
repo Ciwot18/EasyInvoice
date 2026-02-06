@@ -4,6 +4,7 @@ import com.kernith.easyinvoice.config.AuthPrincipal;
 import com.kernith.easyinvoice.data.dto.company.CompanyDetailResponse;
 import com.kernith.easyinvoice.data.dto.company.CompanySummaryResponse;
 import com.kernith.easyinvoice.data.dto.company.CreateCompanyManagerRequest;
+import com.kernith.easyinvoice.data.dto.company.CreatePlatformCompanyManagerRequest;
 import com.kernith.easyinvoice.data.dto.company.CreateCompanyRequest;
 import com.kernith.easyinvoice.data.dto.user.UserSummary;
 import com.kernith.easyinvoice.helper.CurrentUser;
@@ -97,6 +98,29 @@ public class CompanyController {
             @CurrentUser AuthPrincipal principal
     ) {
         return companyService.createCompanyManager(companyId, request, principal)
+                .map(manager -> ResponseEntity.status(HttpStatus.CREATED).body(manager))
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Creates a company manager using a platform-level payload.
+     *
+     * @param request manager creation payload including company id
+     * @param principal authenticated principal
+     * @return created manager summary or {@code 404 Not Found} if company missing
+     * @throws org.springframework.web.server.ResponseStatusException if validation or authorization fails
+     */
+    @PostMapping("/platform/managers")
+    public ResponseEntity<UserSummary> createCompanyManagerForPlatform(
+            @Valid @RequestBody CreatePlatformCompanyManagerRequest request,
+            @CurrentUser AuthPrincipal principal
+    ) {
+        CreateCompanyManagerRequest managerRequest = new CreateCompanyManagerRequest(
+                request.email(),
+                request.name(),
+                request.password()
+        );
+        return companyService.createCompanyManager(request.companyId(), managerRequest, principal)
                 .map(manager -> ResponseEntity.status(HttpStatus.CREATED).body(manager))
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
