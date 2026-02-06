@@ -55,6 +55,7 @@ public class UserService {
         User currentUser = optionalUser.get();
 
         String email = normalizeEmail(request.email());
+        String name = normalizeName(request.name());
         Long companyId = currentUser.getCompany().getId();
 
         userRepository.findByCompanyIdAndEmailIgnoreCase(companyId, email)
@@ -64,6 +65,7 @@ public class UserService {
 
         User user = new User(currentUser.getCompany());
         user.setEmail(email);
+        user.setName(name);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setRole(UserRole.BACK_OFFICE);
         user.setEnabled(true);
@@ -145,5 +147,9 @@ public class UserService {
 
     private String normalizeEmail(String email) {
         return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeName(String name) {
+        return name == null ? null : name.trim();
     }
 }

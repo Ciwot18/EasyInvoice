@@ -114,6 +114,7 @@ public class CompanyService {
         }
 
         String email = normalizeEmail(request.email());
+        String name = normalizeName(request.name());
         userRepository.findByCompanyIdAndEmailIgnoreCase(companyId, email)
                 .ifPresent(existing -> {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already used for this company");
@@ -121,12 +122,13 @@ public class CompanyService {
 
         User user = new User(company.get());
         user.setEmail(email);
+        user.setName(name);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setRole(UserRole.COMPANY_MANAGER);
         user.setEnabled(true);
 
         User saved = userRepository.save(user);
-        return Optional.of(new UserSummary(saved.getId(), saved.getEmail(), saved.getRole(), saved.isEnabled()));
+        return Optional.of(UserSummary.from(saved));
     }
 
     private void requirePlatformAdmin(AuthPrincipal principal) {
@@ -147,6 +149,10 @@ public class CompanyService {
 
     private String normalizeEmail(String email) {
         return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeName(String name) {
+        return name == null ? null : name.trim();
     }
 
     private String normalizeVat(String vatNumber) {

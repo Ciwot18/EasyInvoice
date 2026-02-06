@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public record ProfileResponse(
 		Long id,
 		String email,
+		String name,
 		UserRole role,
 		boolean enabled,
 		LocalDateTime createdAt
@@ -15,6 +16,7 @@ public record ProfileResponse(
         return new ProfileResponse(
                 user.getId(),
                 user.getEmail(),
+                user.getName(),
                 user.getRole(),
                 user.isEnabled(),
                 user.getCreatedAt()

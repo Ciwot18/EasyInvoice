@@ -36,6 +36,9 @@ public class User {
     @Column(name = "email", nullable = false, length = 190)
     private String email;
 
+    @Column(name = "name", nullable = false, length = 80)
+    private String name;
+
     /**
      * BCrypt hash
      */
@@ -79,6 +82,14 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getPasswordHash() {
